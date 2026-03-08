@@ -1,956 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Food - SmartOrder</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f8f9fa;
-            padding-bottom: 80px;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #fc8019 0%, #e23744 100%);
-            color: white;
-            padding: 15px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand h1 {
-            font-size: 1.5em;
-            font-weight: 700;
-        }
-
-        .table-badge {
-            background: rgba(255,255,255,0.25);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: 600;
-        }
-
-        .cart-button {
-            position: relative;
-            background: white;
-            color: #fc8019;
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: transform 0.2s;
-        }
-
-        .cart-button:active {
-            transform: scale(0.95);
-        }
-
-        .cart-count {
-            background: #e23744;
-            color: white;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75em;
-            font-weight: bold;
-        }
-
-        .search-section {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-
-        .search-box {
-            background: white;
-            border-radius: 12px;
-            padding: 12px 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .search-box input {
-            border: none;
-            outline: none;
-            flex: 1;
-            font-size: 1em;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .categories {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding-bottom: 10px;
-            scrollbar-width: none;
-        }
-
-        .categories::-webkit-scrollbar {
-            display: none;
-        }
-
-        .category-btn {
-            background: white;
-            border: 2px solid #e0e0e0;
-            color: #3d4152;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            white-space: nowrap;
-            font-weight: 600;
-            font-size: 0.95em;
-            transition: all 0.3s;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .category-btn.active {
-            background: #fc8019;
-            color: white;
-            border-color: #fc8019;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-        }
-
-        .menu-card {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            transition: transform 0.3s, box-shadow 0.3s;
-            cursor: pointer;
-        }
-
-        .menu-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        }
-
-        .card-image {
-            position: relative;
-            width: 100%;
-            height: 200px;
-            overflow: hidden;
-        }
-
-        .card-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .veg-indicator {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            width: 20px;
-            height: 20px;
-            border: 2px solid;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: white;
-            border-radius: 2px;
-        }
-
-        .veg-indicator.veg {
-            border-color: #0f8a65;
-        }
-
-        .veg-indicator.veg::after {
-            content: '';
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #0f8a65;
-        }
-
-        .veg-indicator.non-veg {
-            border-color: #e43b4f;
-        }
-
-        .veg-indicator.non-veg::after {
-            content: '';
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #e43b4f;
-        }
-
-        .card-content {
-            padding: 16px;
-        }
-
-        .item-name {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #3d4152;
-            margin-bottom: 6px;
-        }
-
-        .item-description {
-            font-size: 0.85em;
-            color: #7e808c;
-            margin-bottom: 12px;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .item-price {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: #3d4152;
-        }
-
-        .add-btn {
-            background: white;
-            color: #fc8019;
-            border: 2px solid #fc8019;
-            padding: 8px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.95em;
-        }
-
-        .add-btn:hover {
-            background: #fc8019;
-            color: white;
-        }
-
-        .quantity-control {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: white;
-            border: 2px solid #fc8019;
-            border-radius: 8px;
-            padding: 6px 12px;
-        }
-
-        .qty-btn {
-            background: none;
-            border: none;
-            color: #fc8019;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .quantity {
-            font-size: 1em;
-            font-weight: 600;
-            color: #fc8019;
-            min-width: 20px;
-            text-align: center;
-        }
-
-        .cart-panel {
-            position: fixed;
-            bottom: -100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border-radius: 24px 24px 0 0;
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
-            padding: 25px;
-            max-height: 75vh;
-            overflow-y: auto;
-            transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 200;
-        }
-
-        .cart-panel.active {
-            bottom: 0;
-        }
-
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .cart-header h2 {
-            font-size: 1.5em;
-            color: #3d4152;
-        }
-
-        .close-cart {
-            background: #f0f0f0;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            font-size: 1.2em;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .cart-items {
-            max-height: 40vh;
-            overflow-y: auto;
-        }
-
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .cart-item-info {
-            flex: 1;
-        }
-
-        .cart-item-name {
-            font-weight: 600;
-            color: #3d4152;
-            margin-bottom: 4px;
-        }
-
-        .cart-item-price {
-            color: #7e808c;
-            font-size: 0.9em;
-        }
-
-        .cart-item-total {
-            font-weight: 700;
-            color: #3d4152;
-            font-size: 1.1em;
-            margin-left: 15px;
-        }
-
-        .bill-details {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 12px;
-        }
-
-        .bill-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            color: #3d4152;
-        }
-
-        .bill-row.total {
-            border-top: 2px solid #e0e0e0;
-            margin-top: 10px;
-            padding-top: 15px;
-            font-size: 1.2em;
-            font-weight: 700;
-        }
-
-        .place-order-btn {
-            background: linear-gradient(135deg, #fc8019 0%, #e23744 100%);
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 1.1em;
-            font-weight: 700;
-            width: 100%;
-            cursor: pointer;
-            transition: transform 0.2s;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .place-order-btn:active {
-            transform: scale(0.98);
-        }
-
-        .empty-cart {
-            text-align: center;
-            padding: 40px;
-            color: #7e808c;
-        }
-
-        .empty-cart-icon {
-            font-size: 4em;
-            margin-bottom: 15px;
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.6);
-            z-index: 300;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .confirmation-modal {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 450px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-icon {
-            font-size: 3em;
-            margin-bottom: 10px;
-        }
-
-        .modal-title {
-            font-size: 1.5em;
-            font-weight: 700;
-            color: #3d4152;
-            margin-bottom: 5px;
-        }
-
-        .modal-subtitle {
-            color: #7e808c;
-            font-size: 0.95em;
-        }
-
-        .order-summary {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 15px;
-            margin: 20px 0;
-        }
-
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .summary-item:last-child {
-            border-bottom: none;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .modal-btn {
-            flex: 1;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1em;
-            transition: transform 0.2s;
-        }
-
-        .modal-btn:active {
-            transform: scale(0.95);
-        }
-
-        .btn-cancel {
-            background: #f0f0f0;
-            color: #3d4152;
-        }
-
-        .btn-confirm {
-            background: linear-gradient(135deg, #0f8a65 0%, #0ba360 100%);
-            color: white;
-        }
-
-        .success-toast {
-            position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            background: #0f8a65;
-            color: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            display: none;
-            align-items: center;
-            gap: 12px;
-            z-index: 400;
-            animation: slideDown 0.4s ease-out;
-        }
-
-        .success-toast.show {
-            display: flex;
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translateX(-50%) translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(-50%) translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .urgent-badge {
-            background: #e23744;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.85em;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-
-        .empty-menu {
-            text-align: center;
-            padding: 60px 20px;
-            color: #7e808c;
-        }
-
-        .empty-menu-icon {
-            font-size: 5em;
-            margin-bottom: 20px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #fc8019;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 768px) {
-            .menu-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .header-content {
-                flex-wrap: wrap;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Food - SmartOrder</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Poppins', sans-serif; background: #f8f9fa; padding-bottom: 80px; }
+
+  /* ── WIFI WALL ── */
+  #wifiWall {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #fc8019 0%, #e23744 100%);
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 30px; text-align: center;
+  }
+  #wifiWall .wifi-icon { font-size: 80px; margin-bottom: 24px; }
+  #wifiWall h2 { font-size: 1.8em; font-weight: 700; color: white; margin-bottom: 14px; }
+  #wifiWall p { font-size: 1em; color: rgba(255,255,255,0.9); line-height: 1.6; margin-bottom: 10px; }
+  #wifiWall .wifi-name-badge {
+    background: rgba(255,255,255,0.2); color: white;
+    padding: 8px 20px; border-radius: 30px; font-weight: 600;
+    font-size: 1.1em; margin: 16px 0; display: inline-block;
+  }
+  #wifiWall .retry-btn {
+    margin-top: 24px; background: white; color: #fc8019;
+    border: none; padding: 14px 36px; border-radius: 12px;
+    font-size: 1em; font-weight: 700; cursor: pointer;
+    font-family: 'Poppins', sans-serif; transition: transform 0.2s;
+  }
+  #wifiWall .retry-btn:active { transform: scale(0.97); }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #fc8019 0%, #e23744 100%);
+    color: white; padding: 15px 20px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  .header-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand h1 { font-size: 1.5em; font-weight: 700; }
+  .table-badge { background: rgba(255,255,255,0.25); padding: 6px 14px; border-radius: 20px; font-size: 0.9em; font-weight: 600; }
+  .cart-button { position: relative; background: white; color: #fc8019; padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: transform 0.2s; font-family: 'Poppins', sans-serif; }
+  .cart-button:active { transform: scale(0.95); }
+  .cart-count { background: #e23744; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: bold; }
+
+  /* ── SEARCH / CATEGORIES ── */
+  .search-section { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+  .search-box { background: white; border-radius: 12px; padding: 12px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .search-box input { border: none; outline: none; flex: 1; font-size: 1em; font-family: 'Poppins', sans-serif; }
+  .categories { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+  .categories::-webkit-scrollbar { display: none; }
+  .category-btn { background: white; border: 2px solid #e0e0e0; color: #3d4152; padding: 10px 20px; border-radius: 25px; cursor: pointer; white-space: nowrap; font-weight: 600; font-size: 0.95em; transition: all 0.3s; font-family: 'Poppins', sans-serif; }
+  .category-btn.active { background: #fc8019; color: white; border-color: #fc8019; }
+
+  /* ── MENU GRID ── */
+  .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .menu-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; }
+  .menu-card:hover { transform: translateY(-5px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .card-image { position: relative; width: 100%; height: 200px; overflow: hidden; }
+  .card-image img { width: 100%; height: 100%; object-fit: cover; }
+  .veg-indicator { position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; border: 2px solid; display: flex; align-items: center; justify-content: center; background: white; border-radius: 2px; }
+  .veg-indicator.veg { border-color: #0f8a65; }
+  .veg-indicator.veg::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #0f8a65; }
+  .veg-indicator.non-veg { border-color: #e43b4f; }
+  .veg-indicator.non-veg::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #e43b4f; }
+  .card-content { padding: 16px; }
+  .item-name { font-size: 1.2em; font-weight: 600; color: #3d4152; margin-bottom: 6px; }
+  .item-description { font-size: 0.85em; color: #7e808c; margin-bottom: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; }
+  .item-price { font-size: 1.3em; font-weight: 700; color: #3d4152; }
+  .add-btn { background: white; color: #fc8019; border: 2px solid #fc8019; padding: 8px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: 'Poppins', sans-serif; font-size: 0.95em; }
+  .add-btn:hover { background: #fc8019; color: white; }
+  .quantity-control { display: flex; align-items: center; gap: 12px; background: white; border: 2px solid #fc8019; border-radius: 8px; padding: 6px 12px; }
+  .qty-btn { background: none; border: none; color: #fc8019; font-size: 1.2em; font-weight: bold; cursor: pointer; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+  .quantity { font-size: 1em; font-weight: 600; color: #fc8019; min-width: 20px; text-align: center; }
+
+  /* ── CART PANEL ── */
+  .cart-panel { position: fixed; bottom: -100%; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 25px; max-height: 75vh; overflow-y: auto; transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 200; }
+  .cart-panel.active { bottom: 0; }
+  .cart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0; }
+  .cart-header h2 { font-size: 1.5em; color: #3d4152; }
+  .close-cart { background: #f0f0f0; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 1.2em; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .cart-items { max-height: 40vh; overflow-y: auto; }
+  .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
+  .cart-item-info { flex: 1; }
+  .cart-item-name { font-weight: 600; color: #3d4152; margin-bottom: 4px; }
+  .cart-item-qty { color: #7e808c; font-size: 0.9em; }
+  .place-order-btn { background: linear-gradient(135deg, #fc8019 0%, #e23744 100%); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1.1em; font-weight: 700; width: 100%; cursor: pointer; transition: transform 0.2s; font-family: 'Poppins', sans-serif; margin-top: 20px; }
+  .place-order-btn:active { transform: scale(0.98); }
+  .empty-cart { text-align: center; padding: 40px; color: #7e808c; }
+  .empty-cart-icon { font-size: 4em; margin-bottom: 15px; }
+
+  /* ── CONFIRMATION MODAL ── */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 300; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .confirmation-modal { background: white; border-radius: 20px; padding: 30px; max-width: 450px; width: 90%; max-height: 80vh; overflow-y: auto; }
+  .modal-header { text-align: center; margin-bottom: 20px; }
+  .modal-icon { font-size: 3em; margin-bottom: 10px; }
+  .modal-title { font-size: 1.5em; font-weight: 700; color: #3d4152; margin-bottom: 5px; }
+  .modal-subtitle { color: #7e808c; font-size: 0.95em; }
+  .order-summary { background: #f8f9fa; border-radius: 12px; padding: 15px; margin: 20px 0; }
+  .summary-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0; }
+  .summary-item:last-child { border-bottom: none; }
+  .summary-total { display: flex; justify-content: space-between; padding: 14px 0 4px; border-top: 2px solid #e0e0e0; margin-top: 8px; font-size: 1.1em; font-weight: 700; color: #3d4152; }
+  .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+  .modal-btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 1em; transition: transform 0.2s; }
+  .modal-btn:active { transform: scale(0.95); }
+  .btn-cancel { background: #f0f0f0; color: #3d4152; }
+  .btn-confirm { background: linear-gradient(135deg, #0f8a65 0%, #0ba360 100%); color: white; }
+  .urgent-badge { background: #e23744; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600; margin-left: 8px; }
+
+  /* ── TOAST ── */
+  .success-toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px); background: #0f8a65; color: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: none; align-items: center; gap: 12px; z-index: 400; animation: slideDown 0.4s ease-out; }
+  .success-toast.show { display: flex; }
+  @keyframes slideDown { from { transform: translateX(-50%) translateY(-20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+
+  /* ── LOADING ── */
+  .loading { text-align: center; padding: 60px 20px; }
+  .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #fc8019; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .empty-menu { text-align: center; padding: 60px 20px; color: #7e808c; }
+  .empty-menu-icon { font-size: 5em; margin-bottom: 20px; }
+
+  @media (max-width: 768px) {
+    .menu-grid { grid-template-columns: 1fr; }
+    .header-content { flex-wrap: wrap; }
+  }
+</style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div class="brand">
-                <h1>🍽️ SmartOrder</h1>
-                <div class="table-badge" id="tableBadge">Table #</div>
+
+<!-- WIFI WALL -->
+<div id="wifiWall">
+  <div class="wifi-icon">📶</div>
+  <h2>Connect to Restaurant WiFi</h2>
+  <p>To place an order, please connect your device to the restaurant's WiFi network.</p>
+  <div class="wifi-name-badge" id="wifiNameBadge">Restaurant WiFi</div>
+  <p style="font-size:0.9em; opacity:0.8;">Once connected, tap the button below.</p>
+  <button class="retry-btn" onclick="retryWifiCheck()">I'm Connected — Retry</button>
+</div>
+
+<div id="mainContent">
+  <div class="header">
+    <div class="header-content">
+      <div class="brand">
+        <h1>🍽️ SmartOrder</h1>
+        <div class="table-badge" id="tableBadge">Table #</div>
+      </div>
+      <button class="cart-button" onclick="toggleCart()">
+        <span>🛒 Cart</span>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="search-section">
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" placeholder="Search for dishes..." id="searchInput" oninput="filterMenu()">
+    </div>
+    <div class="categories" id="categories"></div>
+  </div>
+
+  <div class="container">
+    <div id="loadingState" class="loading" style="display:none;">
+      <div class="spinner"></div>
+      <p>Loading delicious menu...</p>
+    </div>
+    <div class="menu-grid" id="menuGrid"></div>
+  </div>
+</div>
+
+<!-- CART PANEL -->
+<div class="cart-panel" id="cartPanel">
+  <div class="cart-header">
+    <h2>Your Cart</h2>
+    <button class="close-cart" onclick="toggleCart()">×</button>
+  </div>
+  <div id="cartContent"></div>
+</div>
+
+<!-- CONFIRMATION MODAL -->
+<div class="modal-overlay" id="confirmationModal">
+  <div class="confirmation-modal">
+    <div class="modal-header">
+      <div class="modal-icon">🛒</div>
+      <h2 class="modal-title">Confirm Your Order</h2>
+      <p class="modal-subtitle">Please review before placing</p>
+    </div>
+    <div class="order-summary" id="orderSummary"></div>
+    <div class="modal-actions">
+      <button class="modal-btn btn-cancel" onclick="closeConfirmation()">Cancel</button>
+      <button class="modal-btn btn-confirm" onclick="confirmOrder()">Place Order</button>
+    </div>
+  </div>
+</div>
+
+<div class="success-toast" id="successToast">
+  <span>✓</span>
+  <span id="toastMessage">Order placed successfully!</span>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const tableNumber = parseInt(urlParams.get('table')) || 1;
+  document.getElementById('tableBadge').textContent = `Table ${tableNumber}`;
+
+  let menu = [], cart = [], currentCategory = 'All', searchQuery = '', hasActiveOrders = false;
+  let expectedWifiName = '';
+
+  // ─── WIFI CHECK ──────────────────────────────────────────────────────────────
+  async function loadSettings() {
+    try {
+      const res = await fetch('/api/settings');
+      const settings = await res.json();
+      expectedWifiName = (settings.wifiName || '').trim();
+      if (settings.restaurantName) document.querySelector('.brand h1').textContent = '🍽️ ' + settings.restaurantName;
+      if (expectedWifiName) document.getElementById('wifiNameBadge').textContent = expectedWifiName;
+    } catch (e) { /* settings unavailable, skip wifi check */ }
+  }
+
+  function checkWifiConnection() {
+    // Only enforce if admin has configured a WiFi name
+    if (!expectedWifiName) return true;
+
+    // Use Network Information API if available
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (conn && conn.type) {
+      // If explicitly on cellular/unknown, block
+      if (conn.type === 'cellular' || conn.type === 'none') return false;
+      // If on wifi, allow
+      if (conn.type === 'wifi') return true;
+    }
+    // If API unavailable or type unknown, allow (graceful fallback for iOS/Safari)
+    return true;
+  }
+
+  function showWifiWall() {
+    document.getElementById('wifiWall').style.display = 'flex';
+    document.getElementById('mainContent').style.display = 'none';
+  }
+
+  function hideWifiWall() {
+    document.getElementById('wifiWall').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+  }
+
+  function retryWifiCheck() {
+    if (checkWifiConnection()) {
+      hideWifiWall();
+      fetchMenu();
+    } else {
+      // Briefly flash to indicate retry failed
+      const btn = document.querySelector('#wifiWall .retry-btn');
+      btn.textContent = 'Still not connected...';
+      setTimeout(() => { btn.textContent = "I'm Connected — Retry"; }, 2000);
+    }
+  }
+
+  async function initPage() {
+    await loadSettings();
+    if (!checkWifiConnection()) {
+      showWifiWall();
+    } else {
+      hideWifiWall();
+      fetchMenu();
+    }
+    // Listen for network changes
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (conn) {
+      conn.addEventListener('change', () => {
+        if (checkWifiConnection()) { hideWifiWall(); fetchMenu(); }
+        else showWifiWall();
+      });
+    }
+  }
+
+  // ─── MENU ─────────────────────────────────────────────────────────────────
+  async function fetchMenu() {
+    document.getElementById('loadingState').style.display = 'block';
+    try {
+      const response = await fetch('/api/menu');
+      menu = await response.json();
+      const ordersRes = await fetch(`/api/orders/table/${tableNumber}`);
+      const existingOrders = await ordersRes.json();
+      hasActiveOrders = existingOrders.some(o => o.status !== 'completed');
+      displayCategories();
+      displayMenu();
+    } catch (error) { console.error('Error fetching menu:', error); }
+    finally { document.getElementById('loadingState').style.display = 'none'; }
+  }
+
+  function displayCategories() {
+    const categories = ['All', ...new Set(menu.map(item => item.category))];
+    document.getElementById('categories').innerHTML = categories.map(cat => `
+      <button class="category-btn ${cat === currentCategory ? 'active' : ''}" onclick="filterCategory('${cat}')">${cat}</button>
+    `).join('');
+  }
+
+  function filterCategory(category) {
+    currentCategory = category;
+    displayCategories();
+    displayMenu();
+  }
+
+  function filterMenu() {
+    searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    displayMenu();
+  }
+
+  function displayMenu() {
+    let filtered = menu;
+    if (currentCategory !== 'All') filtered = filtered.filter(i => i.category === currentCategory);
+    if (searchQuery) filtered = filtered.filter(i => i.name.toLowerCase().includes(searchQuery) || (i.description && i.description.toLowerCase().includes(searchQuery)));
+
+    const menuGrid = document.getElementById('menuGrid');
+    if (filtered.length === 0) {
+      menuGrid.innerHTML = `<div class="empty-menu" style="grid-column:1/-1"><div class="empty-menu-icon">🔍</div><h2>No items found</h2></div>`;
+      return;
+    }
+    menuGrid.innerHTML = filtered.map(item => {
+      const cartItem = cart.find(c => c.id === item.id);
+      const qty = cartItem ? cartItem.quantity : 0;
+      return `
+        <div class="menu-card">
+          <div class="card-image">
+            <img src="${item.image || 'https://via.placeholder.com/400x200?text=Food'}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/400x200?text=Food'">
+            <div class="veg-indicator ${item.veg ? 'veg' : 'non-veg'}"></div>
+          </div>
+          <div class="card-content">
+            <div class="item-name">${item.name}</div>
+            <div class="item-description">${item.description || 'Delicious and fresh'}</div>
+            <div class="card-footer">
+              <div class="item-price">₹${item.price}</div>
+              ${qty > 0 ? `
+                <div class="quantity-control">
+                  <button class="qty-btn" onclick="updateQuantity('${item.id}', -1)">−</button>
+                  <span class="quantity">${qty}</span>
+                  <button class="qty-btn" onclick="updateQuantity('${item.id}', 1)">+</button>
+                </div>
+              ` : `<button class="add-btn" onclick="addToCart('${item.id}')">ADD</button>`}
             </div>
-            <button class="cart-button" onclick="toggleCart()">
-                <span>🛒 Cart</span>
-                <span class="cart-count" id="cartCount">0</span>
-            </button>
-        </div>
-    </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
 
-    <div class="search-section">
-        <div class="search-box">
-            <span>🔍</span>
-            <input type="text" placeholder="Search for dishes..." id="searchInput" oninput="filterMenu()">
-        </div>
-        <div class="categories" id="categories"></div>
-    </div>
+  function addToCart(itemId) {
+    const item = menu.find(m => m.id === itemId);
+    if (!item) return;
+    const existing = cart.find(c => c.id === itemId);
+    if (existing) existing.quantity++;
+    else cart.push({ ...item, quantity: 1 });
+    updateCart(); displayMenu();
+  }
 
-    <div class="container">
-        <div id="loadingState" class="loading" style="display: none;">
-            <div class="spinner"></div>
-            <p>Loading delicious menu...</p>
-        </div>
-        <div class="menu-grid" id="menuGrid"></div>
-    </div>
+  function updateQuantity(itemId, change) {
+    const cartItem = cart.find(c => c.id === itemId);
+    if (!cartItem) return;
+    cartItem.quantity += change;
+    if (cartItem.quantity <= 0) cart = cart.filter(c => c.id !== itemId);
+    updateCart(); displayMenu();
+  }
 
-    <div class="cart-panel" id="cartPanel">
-        <div class="cart-header">
-            <h2>Your Cart</h2>
-            <button class="close-cart" onclick="toggleCart()">×</button>
-        </div>
-        <div id="cartContent"></div>
-    </div>
-
-    <div class="modal-overlay" id="confirmationModal">
-        <div class="confirmation-modal">
-            <div class="modal-header">
-                <div class="modal-icon">🛒</div>
-                <h2 class="modal-title">Confirm Your Order</h2>
-                <p class="modal-subtitle">Please review your order before placing</p>
+  function updateCart() {
+    const totalQty = cart.reduce((s, i) => s + i.quantity, 0);
+    document.getElementById('cartCount').textContent = totalQty;
+    const cartContent = document.getElementById('cartContent');
+    if (cart.length === 0) {
+      cartContent.innerHTML = `<div class="empty-cart"><div class="empty-cart-icon">🛒</div><h3>Your cart is empty</h3><p>Add items to get started</p></div>`;
+      return;
+    }
+    // ── NO TOTAL SHOWN IN CART PANEL ──
+    cartContent.innerHTML = `
+      <div class="cart-items">
+        ${cart.map(item => `
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${item.name}</div>
+              <div class="cart-item-qty">Qty: ${item.quantity}</div>
             </div>
-            <div class="order-summary" id="orderSummary"></div>
-            <div class="modal-actions">
-                <button class="modal-btn btn-cancel" onclick="closeConfirmation()">Cancel</button>
-                <button class="modal-btn btn-confirm" onclick="confirmOrder()">Place Order</button>
-            </div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="place-order-btn" onclick="showConfirmation()">
+        Review & Place Order${hasActiveOrders ? ' <span class="urgent-badge">URGENT</span>' : ''}
+      </button>
+    `;
+  }
+
+  function toggleCart() { document.getElementById('cartPanel').classList.toggle('active'); }
+
+  function showConfirmation() {
+    if (cart.length === 0) return;
+    const itemTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+    const taxes = Math.round(itemTotal * 0.05);
+    const total = itemTotal + taxes;
+    document.getElementById('orderSummary').innerHTML = `
+      <div style="margin-bottom:15px;">
+        <strong>Table ${tableNumber}</strong>
+        ${hasActiveOrders ? '<span class="urgent-badge">URGENT ORDER</span>' : ''}
+      </div>
+      ${cart.map(item => `
+        <div class="summary-item">
+          <span>${item.name} × ${item.quantity}</span>
+          <span>₹${item.price * item.quantity}</span>
         </div>
-    </div>
+      `).join('')}
+      <div class="summary-total">
+        <span>Total Amount</span>
+        <span>₹${total}</span>
+      </div>
+    `;
+    document.getElementById('confirmationModal').classList.add('active');
+  }
 
-    <div class="success-toast" id="successToast">
-        <span>✓</span>
-        <span id="toastMessage">Order placed successfully!</span>
-    </div>
+  function closeConfirmation() { document.getElementById('confirmationModal').classList.remove('active'); }
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const tableNumber = parseInt(urlParams.get('table')) || 1;
-        document.getElementById('tableBadge').textContent = `Table ${tableNumber}`;
+  async function confirmOrder() {
+    if (cart.length === 0) return;
+    try {
+      const res = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableNumber, items: cart })
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeConfirmation();
+        const toast = document.getElementById('successToast');
+        document.getElementById('toastMessage').textContent = data.message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+        cart = []; hasActiveOrders = true;
+        updateCart(); displayMenu(); toggleCart();
+      }
+    } catch (e) { alert('Failed to place order. Please try again.'); }
+  }
 
-        let menu = [];
-        let cart = [];
-        let currentCategory = 'All';
-        let searchQuery = '';
-        let hasActiveOrders = false;
-
-        async function fetchMenu() {
-            document.getElementById('loadingState').style.display = 'block';
-            try {
-                const response = await fetch('/api/menu');
-                menu = await response.json();
-                
-                const ordersResponse = await fetch(`/api/orders/table/${tableNumber}`);
-                const existingOrders = await ordersResponse.json();
-                hasActiveOrders = existingOrders.some(o => o.status !== 'completed');
-                
-                displayCategories();
-                displayMenu();
-            } catch (error) {
-                console.error('Error fetching menu:', error);
-            } finally {
-                document.getElementById('loadingState').style.display = 'none';
-            }
-        }
-
-        function displayCategories() {
-            const categories = ['All', ...new Set(menu.map(item => item.category))];
-            const categoriesDiv = document.getElementById('categories');
-            
-            categoriesDiv.innerHTML = categories.map(cat => `
-                <button class="category-btn ${cat === currentCategory ? 'active' : ''}" 
-                        onclick="filterCategory('${cat}')">
-                    ${cat}
-                </button>
-            `).join('');
-        }
-
-        function filterCategory(category) {
-            currentCategory = category;
-            displayCategories();
-            displayMenu();
-        }
-
-        function filterMenu() {
-            searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            displayMenu();
-        }
-
-        function displayMenu() {
-            let filteredMenu = menu;
-            
-            if (currentCategory !== 'All') {
-                filteredMenu = filteredMenu.filter(item => item.category === currentCategory);
-            }
-            
-            if (searchQuery) {
-                filteredMenu = filteredMenu.filter(item => 
-                    item.name.toLowerCase().includes(searchQuery) ||
-                    (item.description && item.description.toLowerCase().includes(searchQuery))
-                );
-            }
-
-            const menuGrid = document.getElementById('menuGrid');
-            
-            if (filteredMenu.length === 0) {
-                menuGrid.innerHTML = `
-                    <div class="empty-menu" style="grid-column: 1/-1;">
-                        <div class="empty-menu-icon">🔍</div>
-                        <h2>No items found</h2>
-                        <p>Try adjusting your search or filters</p>
-                    </div>
-                `;
-                return;
-            }
-
-            menuGrid.innerHTML = filteredMenu.map(item => {
-                const cartItem = cart.find(c => c.id === item.id);
-                const quantity = cartItem ? cartItem.quantity : 0;
-
-                return `
-                    <div class="menu-card">
-                        <div class="card-image">
-                            <img src="${item.image || 'https://via.placeholder.com/400x200?text=Food+Image'}" 
-                                 alt="${item.name}"
-                                 onerror="this.src='https://via.placeholder.com/400x200?text=Food+Image'">
-                            <div class="veg-indicator ${item.veg ? 'veg' : 'non-veg'}"></div>
-                        </div>
-                        <div class="card-content">
-                            <div class="item-name">${item.name}</div>
-                            <div class="item-description">${item.description || 'Delicious and fresh'}</div>
-                            <div class="card-footer">
-                                <div class="item-price">₹${item.price}</div>
-                                ${quantity > 0 ? `
-                                    <div class="quantity-control">
-                                        <button class="qty-btn" onclick="updateQuantity('${item.id}', -1)">−</button>
-                                        <span class="quantity">${quantity}</span>
-                                        <button class="qty-btn" onclick="updateQuantity('${item.id}', 1)">+</button>
-                                    </div>
-                                ` : `
-                                    <button class="add-btn" onclick="addToCart('${item.id}')">ADD</button>
-                                `}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function addToCart(itemId) {
-            const item = menu.find(m => m.id === itemId);
-            if (!item) return;
-
-            const existingItem = cart.find(c => c.id === itemId);
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                cart.push({ ...item, quantity: 1 });
-            }
-
-            updateCart();
-            displayMenu();
-        }
-
-        function updateQuantity(itemId, change) {
-            const cartItem = cart.find(c => c.id === itemId);
-            if (!cartItem) return;
-
-            cartItem.quantity += change;
-
-            if (cartItem.quantity <= 0) {
-                cart = cart.filter(c => c.id !== itemId);
-            }
-
-            updateCart();
-            displayMenu();
-        }
-
-        function updateCart() {
-            const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-            document.getElementById('cartCount').textContent = cartCount;
-
-            const cartContent = document.getElementById('cartContent');
-
-            if (cart.length === 0) {
-                cartContent.innerHTML = `
-                    <div class="empty-cart">
-                        <div class="empty-cart-icon">🛒</div>
-                        <h3>Your cart is empty</h3>
-                        <p>Add items to get started</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const itemTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const taxes = Math.round(itemTotal * 0.05);
-            const total = itemTotal + taxes;
-
-            cartContent.innerHTML = `
-                <div class="cart-items">
-                    ${cart.map(item => `
-                        <div class="cart-item">
-                            <div class="cart-item-info">
-                                <div class="cart-item-name">${item.name}</div>
-                                <div class="cart-item-price">₹${item.price} × ${item.quantity}</div>
-                            </div>
-                            <div class="cart-item-total">₹${item.price * item.quantity}</div>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="bill-details">
-                    <div class="bill-row">
-                        <span>Item Total</span>
-                        <span>₹${itemTotal}</span>
-                    </div>
-                    <div class="bill-row">
-                        <span>Taxes & Charges</span>
-                        <span>₹${taxes}</span>
-                    </div>
-                    <div class="bill-row total">
-                        <span>Total</span>
-                        <span>₹${total}</span>
-                    </div>
-                </div>
-                <button class="place-order-btn" onclick="showConfirmation()">
-                    Proceed to Order${hasActiveOrders ? ' <span class="urgent-badge">URGENT</span>' : ''}
-                </button>
-            `;
-        }
-
-        function toggleCart() {
-            document.getElementById('cartPanel').classList.toggle('active');
-        }
-
-        function showConfirmation() {
-            if (cart.length === 0) return;
-
-            const itemTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const taxes = Math.round(itemTotal * 0.05);
-            const total = itemTotal + taxes;
-
-            const orderSummary = document.getElementById('orderSummary');
-            orderSummary.innerHTML = `
-                <div style="margin-bottom: 15px;">
-                    <strong>Table ${tableNumber}</strong>
-                    ${hasActiveOrders ? '<span class="urgent-badge">URGENT ORDER</span>' : ''}
-                </div>
-                ${cart.map(item => `
-                    <div class="summary-item">
-                        <span>${item.name} × ${item.quantity}</span>
-                        <span>₹${item.price * item.quantity}</span>
-                    </div>
-                `).join('')}
-                <div class="summary-item" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #e0e0e0;">
-                    <span><strong>Total Amount</strong></span>
-                    <span><strong>₹${total}</strong></span>
-                </div>
-            `;
-
-            document.getElementById('confirmationModal').classList.add('active');
-        }
-
-        function closeConfirmation() {
-            document.getElementById('confirmationModal').classList.remove('active');
-        }
-
-        async function confirmOrder() {
-            if (cart.length === 0) return;
-
-            try {
-                const response = await fetch('/api/order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tableNumber: tableNumber,
-                        items: cart
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    closeConfirmation();
-                    
-                    const toast = document.getElementById('successToast');
-                    document.getElementById('toastMessage').textContent = data.message;
-                    toast.classList.add('show');
-
-                    setTimeout(() => {
-                        toast.classList.remove('show');
-                    }, 3000);
-
-                    cart = [];
-                    hasActiveOrders = true;
-                    updateCart();
-                    displayMenu();
-                    toggleCart();
-                }
-            } catch (error) {
-                console.error('Error placing order:', error);
-                alert('Failed to place order. Please try again.');
-            }
-        }
-
-        fetchMenu();
-    </script>
+  // Init
+  initPage();
+</script>
 </body>
 </html>
