@@ -5,28 +5,36 @@ const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const path = require('path');
+const multer = require('multer');
 const Database = require('better-sqlite3');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 
+// multer — store uploads as base64 in DB (no disk dependency on Render)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
-// ─── DATABASE SETUP ───────────────────────────────────────────────────────────
-const db = new Database('restaurant.db');
+// ─── DATABASE ────────────────────────────────────────────────────────────────
+const DB_PATH = process.env.DB_PATH || 'restaurant.db';
+const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 function initDatabase() {
   db.exec(`
-    CREATE TABLE IF NOT EXISTS settings (
+    CREATE TABLE IF NOT EXISTS config (
       id INTEGER PRIMARY KEY DEFAULT 1,
       restaurant_name TEXT DEFAULT 'My Restaurant',
       currency TEXT DEFAULT '₹',
-      wifi_name TEXT DEFAULT ''
+      wifi_name TEXT DEFAULT '',
+      wifi_ip TEXT DEFAULT '',
+      logo TEXT DEFAULT '',
+      banner TEXT DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS tables (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,13 +89,27 @@ function initDatabase() {
     );
   `);
 
-  const settingsExists = db.prepare('SELECT id FROM settings WHERE id = 1').get();
-  if (!settingsExists) {
-    db.prepare('INSERT INTO settings (id, restaurant_name, currency, wifi_name) VALUES (1, ?, ?, ?)').run('My Restaurant', '₹', '');
+  // Migrate old settings table → config if needed
+  const oldSettings = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='settings'").get();
+  if (oldSettings) {
+    const old = db.prepare('SELECT * FROM settings WHERE id=1').get();
+    if (old) {
+      const configExists = db.prepare('SELECT id FROM config WHERE id=1').get();
+      if (!configExists) {
+        db.prepare('INSERT INTO config (id,restaurant_name,currency,wifi_name,wifi_ip,logo,banner) VALUES (1,?,?,?,?,?,?)')
+          .run(old.restaurant_name || 'My Restaurant', old.currency || '₹', old.wifi_name || '', '', '', '');
+      }
+    }
+  }
+
+  const configExists = db.prepare('SELECT id FROM config WHERE id=1').get();
+  if (!configExists) {
+    db.prepare('INSERT INTO config (id,restaurant_name,currency,wifi_name,wifi_ip,logo,banner) VALUES (1,?,?,?,?,?,?)')
+      .run('My Restaurant', '₹', '', '', '', '');
   }
 
   for (let i = 1; i <= 15; i++) {
-    db.prepare('INSERT OR IGNORE INTO tables (table_number, status) VALUES (?, ?)').run(i, 'available');
+    db.prepare('INSERT OR IGNORE INTO tables (table_number,status) VALUES (?,?)').run(i, 'available');
   }
 
   const menuCount = db.prepare('SELECT COUNT(*) as count FROM menu_items').get();
@@ -121,6 +143,12 @@ function initDatabase() {
 
 initDatabase();
 
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function getConfig() {
+  const c = db.prepare('SELECT * FROM config WHERE id=1').get();
+  return { restaurantName: c.restaurant_name, currency: c.currency, wifiName: c.wifi_name, wifiIp: c.wifi_ip, logo: c.logo, banner: c.banner };
+}
+
 function getNextOrderNumber() {
   const a = db.prepare('SELECT COUNT(*) as count FROM orders').get();
   const h = db.prepare('SELECT COUNT(*) as count FROM order_history').get();
@@ -133,16 +161,22 @@ function normalizeMenuItem(item) {
 
 function getActiveOrdersWithItems() {
   return db.prepare('SELECT * FROM orders ORDER BY is_urgent DESC, timestamp ASC').all().map(order => {
-    const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id);
+    const items = db.prepare('SELECT * FROM order_items WHERE order_id=?').all(order.id);
     return { ...order, isUrgent: order.is_urgent === 1, orderNumber: order.order_number, tableNumber: order.table_number, createdAt: order.created_at, items: items.map(i => ({ ...i, id: i.item_id, name: i.item_name })) };
   });
 }
 
 function getOrderHistory() {
   return db.prepare('SELECT * FROM order_history ORDER BY completed_at DESC').all().map(order => {
-    const items = db.prepare('SELECT * FROM order_history_items WHERE order_id = ?').all(order.id);
+    const items = db.prepare('SELECT * FROM order_history_items WHERE order_id=?').all(order.id);
     return { ...order, isUrgent: false, orderNumber: order.order_number, tableNumber: order.table_number, createdAt: order.created_at, completedAt: order.completed_at, items: items.map(i => ({ name: i.item_name, quantity: i.quantity, price: i.price })) };
   });
+}
+
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.socket.remoteAddress || req.ip || '';
 }
 
 // ─── SOCKET.IO ────────────────────────────────────────────────────────────────
@@ -153,44 +187,111 @@ io.on('connection', (socket) => {
   });
   socket.on('join-admin', () => {
     socket.join('admin');
-    socket.emit('admin-data', { orders: getActiveOrdersWithItems(), orderHistory: getOrderHistory(), menu: db.prepare('SELECT * FROM menu_items ORDER BY category, name').all().map(normalizeMenuItem), tables: db.prepare('SELECT * FROM tables ORDER BY table_number').all() });
+    socket.emit('admin-data', {
+      orders: getActiveOrdersWithItems(),
+      orderHistory: getOrderHistory(),
+      menu: db.prepare('SELECT * FROM menu_items ORDER BY category,name').all().map(normalizeMenuItem),
+      tables: db.prepare('SELECT * FROM tables ORDER BY table_number').all()
+    });
   });
+});
+
+// ─── API: CONFIG (system-config page) ─────────────────────────────────────────
+app.get('/api/config', (req, res) => res.json(getConfig()));
+
+app.post('/api/config', upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'banner', maxCount: 1 }]), (req, res) => {
+  try {
+    const { restaurantName, currency, wifiName, wifiIp } = req.body;
+    const current = getConfig();
+
+    let logo = current.logo;
+    let banner = current.banner;
+
+    if (req.files && req.files['logo'] && req.files['logo'][0]) {
+      const f = req.files['logo'][0];
+      logo = `data:${f.mimetype};base64,${f.buffer.toString('base64')}`;
+    } else if (req.body.logoUrl !== undefined) {
+      logo = req.body.logoUrl;
+    }
+
+    if (req.files && req.files['banner'] && req.files['banner'][0]) {
+      const f = req.files['banner'][0];
+      banner = `data:${f.mimetype};base64,${f.buffer.toString('base64')}`;
+    } else if (req.body.bannerUrl !== undefined) {
+      banner = req.body.bannerUrl;
+    }
+
+    db.prepare('UPDATE config SET restaurant_name=?,currency=?,wifi_name=?,wifi_ip=?,logo=?,banner=? WHERE id=1')
+      .run(restaurantName || 'My Restaurant', currency || '₹', wifiName || '', wifiIp || '', logo, banner);
+
+    io.emit('config-update', getConfig());
+    res.json({ success: true, config: getConfig() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── API: WIFI CHECK (server-side IP validation) ─────────────────────────────
+app.get('/api/wifi-check', (req, res) => {
+  const cfg = getConfig();
+  const clientIp = getClientIp(req);
+
+  // If no wifi_ip configured → always allow
+  if (!cfg.wifiIp || cfg.wifiIp.trim() === '') {
+    return res.json({ allowed: true, clientIp, reason: 'No restriction configured' });
+  }
+
+  // Check if clientIp starts with the configured prefix
+  // e.g. wifiIp = "192.168.1" matches any "192.168.1.x"
+  const prefix = cfg.wifiIp.trim();
+  const allowed = clientIp.startsWith(prefix) || clientIp === '::1' || clientIp === '127.0.0.1' || clientIp.includes('127.0.0.1');
+
+  res.json({ allowed, clientIp, wifiName: cfg.wifiName, reason: allowed ? 'IP matched' : 'IP not in restaurant network' });
+});
+
+// ─── API: SETTINGS (kept for backward compat, proxies to config) ──────────────
+app.get('/api/settings', (req, res) => {
+  const c = getConfig();
+  res.json({ restaurantName: c.restaurantName, currency: c.currency, wifiName: c.wifiName });
+});
+
+app.put('/api/settings', (req, res) => {
+  const { restaurantName, currency, wifiName } = req.body;
+  const c = getConfig();
+  db.prepare('UPDATE config SET restaurant_name=?,currency=?,wifi_name=? WHERE id=1')
+    .run(restaurantName || c.restaurantName, currency || c.currency, wifiName || '');
+  res.json({ success: true });
 });
 
 // ─── API: TABLES ─────────────────────────────────────────────────────────────
 app.get('/api/tables', (req, res) => res.json(db.prepare('SELECT * FROM tables ORDER BY table_number').all()));
-app.get('/api/table/:tableNumber', (req, res) => {
-  const table = db.prepare('SELECT * FROM tables WHERE table_number = ?').get(parseInt(req.params.tableNumber));
-  table ? res.json(table) : res.status(404).json({ error: 'Table not found' });
-});
 
 // ─── API: MENU ────────────────────────────────────────────────────────────────
-app.get('/api/menu', (req, res) => res.json(db.prepare('SELECT * FROM menu_items WHERE available = 1 ORDER BY category, name').all().map(normalizeMenuItem)));
-app.get('/api/menu/category/:category', (req, res) => res.json(db.prepare('SELECT * FROM menu_items WHERE category = ? AND available = 1').all(req.params.category).map(normalizeMenuItem)));
+app.get('/api/menu', (req, res) => res.json(db.prepare('SELECT * FROM menu_items WHERE available=1 ORDER BY category,name').all().map(normalizeMenuItem)));
+app.get('/api/menu/all', (req, res) => res.json(db.prepare('SELECT * FROM menu_items ORDER BY category,name').all().map(normalizeMenuItem)));
 
 app.post('/api/menu', (req, res) => {
   try {
     const { name, category, price, veg, description, image } = req.body;
     const id = uuidv4();
     db.prepare('INSERT INTO menu_items (id,name,category,price,veg,available,image,description) VALUES (?,?,?,?,?,1,?,?)').run(id, name, category, price, veg ? 1 : 0, image || '', description || '');
-    io.emit('menu-update', db.prepare('SELECT * FROM menu_items').all().map(normalizeMenuItem));
-    res.status(201).json({ success: true, item: normalizeMenuItem(db.prepare('SELECT * FROM menu_items WHERE id = ?').get(id)) });
+    io.emit('menu-update', db.prepare('SELECT * FROM menu_items ORDER BY category,name').all().map(normalizeMenuItem));
+    res.status(201).json({ success: true, item: normalizeMenuItem(db.prepare('SELECT * FROM menu_items WHERE id=?').get(id)) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/menu/:itemId', (req, res) => {
   try {
     const { name, category, price, veg, description, image, available } = req.body;
-    db.prepare('UPDATE menu_items SET name=?,category=?,price=?,veg=?,description=?,image=?,available=? WHERE id=?').run(name, category, price, veg ? 1 : 0, description || '', image || '', available !== undefined ? (available ? 1 : 0) : 1, req.params.itemId);
-    io.emit('menu-update', db.prepare('SELECT * FROM menu_items').all().map(normalizeMenuItem));
-    res.json({ success: true, item: normalizeMenuItem(db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.itemId)) });
+    db.prepare('UPDATE menu_items SET name=?,category=?,price=?,veg=?,description=?,image=?,available=? WHERE id=?')
+      .run(name, category, price, veg ? 1 : 0, description || '', image || '', available !== undefined ? (available ? 1 : 0) : 1, req.params.itemId);
+    io.emit('menu-update', db.prepare('SELECT * FROM menu_items ORDER BY category,name').all().map(normalizeMenuItem));
+    res.json({ success: true, item: normalizeMenuItem(db.prepare('SELECT * FROM menu_items WHERE id=?').get(req.params.itemId)) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.delete('/api/menu/:itemId', (req, res) => {
   try {
-    db.prepare('DELETE FROM menu_items WHERE id = ?').run(req.params.itemId);
-    io.emit('menu-update', db.prepare('SELECT * FROM menu_items').all().map(normalizeMenuItem));
+    db.prepare('DELETE FROM menu_items WHERE id=?').run(req.params.itemId);
+    io.emit('menu-update', db.prepare('SELECT * FROM menu_items ORDER BY category,name').all().map(normalizeMenuItem));
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -201,47 +302,102 @@ app.post('/api/order', (req, res) => {
     const { tableNumber, items } = req.body;
     if (!tableNumber || !items || !items.length) return res.status(400).json({ error: 'Invalid order data' });
     const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
-    const activeCount = db.prepare("SELECT COUNT(*) as count FROM orders WHERE table_number = ? AND status != 'completed'").get(tableNumber).count;
+    const activeCount = db.prepare("SELECT COUNT(*) as count FROM orders WHERE table_number=? AND status!='completed'").get(tableNumber).count;
     const isUrgent = activeCount > 0 ? 1 : 0;
     const now = new Date();
     const orderId = uuidv4();
     const orderNumber = getNextOrderNumber();
-    db.prepare('INSERT INTO orders (id,order_number,table_number,total,status,is_urgent,timestamp,created_at) VALUES (?,?,?,?,?,?,?,?)').run(orderId, orderNumber, tableNumber, total, 'pending', isUrgent, now.toISOString(), now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+    db.prepare('INSERT INTO orders (id,order_number,table_number,total,status,is_urgent,timestamp,created_at) VALUES (?,?,?,?,?,?,?,?)')
+      .run(orderId, orderNumber, tableNumber, total, 'pending', isUrgent, now.toISOString(), now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
     items.forEach(item => db.prepare('INSERT INTO order_items (order_id,item_id,item_name,quantity,price) VALUES (?,?,?,?,?)').run(orderId, item.id, item.name, item.quantity, item.price));
     db.prepare("UPDATE tables SET status='occupied' WHERE table_number=?").run(tableNumber);
     const newOrder = { id: orderId, orderNumber, tableNumber, total, status: 'pending', isUrgent: isUrgent === 1, timestamp: now.toISOString(), createdAt: now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }), items };
     io.to('kitchen').emit('new-order', newOrder);
     io.to('admin').emit('new-order', newOrder);
-    res.status(201).json({ success: true, order: newOrder, message: isUrgent ? 'Urgent order placed!' : 'Order placed successfully!' });
+    res.status(201).json({ success: true, order: newOrder, message: isUrgent ? 'Additional order placed!' : 'Order placed successfully!' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/orders', (req, res) => res.json(getActiveOrdersWithItems()));
 app.get('/api/orders/history', (req, res) => res.json(getOrderHistory()));
+
 app.get('/api/orders/table/:tableNumber', (req, res) => {
-  const orders = db.prepare('SELECT * FROM orders WHERE table_number = ?').all(parseInt(req.params.tableNumber));
-  res.json(orders.map(o => ({ ...o, isUrgent: o.is_urgent === 1, items: db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(o.id) })));
+  const tNum = parseInt(req.params.tableNumber);
+  const orders = db.prepare('SELECT * FROM orders WHERE table_number=?').all(tNum);
+  res.json(orders.map(o => ({ ...o, isUrgent: o.is_urgent === 1, orderNumber: o.order_number, tableNumber: o.table_number, items: db.prepare('SELECT * FROM order_items WHERE order_id=?').all(o.id).map(i => ({ ...i, name: i.item_name })) })));
+});
+
+// Bill for a table (all active orders aggregated)
+app.get('/api/bill/table/:tableNumber', (req, res) => {
+  try {
+    const tNum = parseInt(req.params.tableNumber);
+    const orders = db.prepare('SELECT * FROM orders WHERE table_number=?').all(tNum);
+    const allItems = [];
+    let grandTotal = 0;
+    orders.forEach(order => {
+      const items = db.prepare('SELECT * FROM order_items WHERE order_id=?').all(order.id);
+      items.forEach(i => {
+        const existing = allItems.find(a => a.item_name === i.item_name && a.price === i.price);
+        if (existing) existing.quantity += i.quantity;
+        else allItems.push({ item_name: i.item_name, quantity: i.quantity, price: i.price });
+      });
+      grandTotal += order.total;
+    });
+    const cfg = getConfig();
+    res.json({
+      tableNumber: tNum,
+      orders: orders.map(o => ({ ...o, orderNumber: o.order_number, createdAt: o.created_at })),
+      items: allItems,
+      grandTotal,
+      currency: cfg.currency,
+      restaurantName: cfg.restaurantName,
+      generatedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/order/:orderId/status', (req, res) => {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
-    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+    const order = db.prepare('SELECT * FROM orders WHERE id=?').get(orderId);
     if (!order) return res.status(404).json({ error: 'Order not found' });
     if (status === 'completed') {
-      const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(orderId);
+      const items = db.prepare('SELECT * FROM order_items WHERE order_id=?').all(orderId);
       const completedAt = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-      db.prepare('INSERT INTO order_history (id,order_number,table_number,total,timestamp,created_at,completed_at) VALUES (?,?,?,?,?,?,?)').run(order.id, order.order_number, order.table_number, order.total, order.timestamp, order.created_at, completedAt);
+      db.prepare('INSERT INTO order_history (id,order_number,table_number,total,timestamp,created_at,completed_at) VALUES (?,?,?,?,?,?,?)')
+        .run(order.id, order.order_number, order.table_number, order.total, order.timestamp, order.created_at, completedAt);
       items.forEach(i => db.prepare('INSERT INTO order_history_items (order_id,item_name,quantity,price) VALUES (?,?,?,?)').run(orderId, i.item_name, i.quantity, i.price));
-      db.prepare('DELETE FROM order_items WHERE order_id = ?').run(orderId);
-      db.prepare('DELETE FROM orders WHERE id = ?').run(orderId);
-      if (db.prepare('SELECT COUNT(*) as count FROM orders WHERE table_number = ?').get(order.table_number).count === 0) db.prepare("UPDATE tables SET status='available' WHERE table_number=?").run(order.table_number);
+      db.prepare('DELETE FROM order_items WHERE order_id=?').run(orderId);
+      db.prepare('DELETE FROM orders WHERE id=?').run(orderId);
+      if (db.prepare('SELECT COUNT(*) as count FROM orders WHERE table_number=?').get(order.table_number).count === 0)
+        db.prepare("UPDATE tables SET status='available' WHERE table_number=?").run(order.table_number);
     } else {
-      db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, orderId);
+      db.prepare('UPDATE orders SET status=? WHERE id=?').run(status, orderId);
     }
     io.to('kitchen').emit('order-status-update', { orderId, status });
     io.to('admin').emit('order-status-update', { orderId, status });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Complete all orders for a table at once (bill payment)
+app.post('/api/bill/table/:tableNumber/complete', (req, res) => {
+  try {
+    const tNum = parseInt(req.params.tableNumber);
+    const orders = db.prepare('SELECT * FROM orders WHERE table_number=?').all(tNum);
+    const completedAt = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    orders.forEach(order => {
+      const items = db.prepare('SELECT * FROM order_items WHERE order_id=?').all(order.id);
+      db.prepare('INSERT OR IGNORE INTO order_history (id,order_number,table_number,total,timestamp,created_at,completed_at) VALUES (?,?,?,?,?,?,?)')
+        .run(order.id, order.order_number, order.table_number, order.total, order.timestamp, order.created_at, completedAt);
+      items.forEach(i => db.prepare('INSERT INTO order_history_items (order_id,item_name,quantity,price) VALUES (?,?,?,?)').run(order.id, i.item_name, i.quantity, i.price));
+      db.prepare('DELETE FROM order_items WHERE order_id=?').run(order.id);
+      db.prepare('DELETE FROM orders WHERE id=?').run(order.id);
+    });
+    db.prepare("UPDATE tables SET status='available' WHERE table_number=?").run(tNum);
+    io.to('kitchen').emit('orders-update', getActiveOrdersWithItems());
+    io.to('admin').emit('orders-update', getActiveOrdersWithItems());
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -252,6 +408,40 @@ app.get('/api/reports/today', (req, res) => {
   const history = getOrderHistory();
   const todayOrders = history.filter(o => new Date(o.timestamp).toLocaleDateString('en-IN') === today);
   res.json({ date: today, totalOrders: todayOrders.length, totalSales: todayOrders.reduce((s, o) => s + o.total, 0), orders: todayOrders });
+});
+
+app.get('/api/reports/analytics', (req, res) => {
+  try {
+    const today = new Date().toLocaleDateString('en-IN');
+    const history = getOrderHistory();
+    const todayOrders = history.filter(o => new Date(o.timestamp).toLocaleDateString('en-IN') === today);
+    const totalSales = todayOrders.reduce((s, o) => s + o.total, 0);
+
+    // Table-wise orders (active)
+    const activeOrders = getActiveOrdersWithItems();
+    const tableMap = {};
+    activeOrders.forEach(o => {
+      if (!tableMap[o.tableNumber]) tableMap[o.tableNumber] = { tableNumber: o.tableNumber, orderCount: 0, total: 0 };
+      tableMap[o.tableNumber].orderCount++;
+      tableMap[o.tableNumber].total += o.total;
+    });
+
+    // Most ordered items today
+    const itemMap = {};
+    todayOrders.forEach(o => o.items.forEach(i => {
+      if (!itemMap[i.name]) itemMap[i.name] = { name: i.name, count: 0 };
+      itemMap[i.name].count += i.quantity;
+    }));
+    const topItems = Object.values(itemMap).sort((a, b) => b.count - a.count).slice(0, 5);
+
+    res.json({
+      todayOrders: todayOrders.length,
+      todaySales: totalSales,
+      activeOrders: activeOrders.length,
+      tableWise: Object.values(tableMap),
+      topItems
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ─── API: QR CODES ────────────────────────────────────────────────────────────
@@ -269,22 +459,11 @@ app.get('/api/qr/generate/all', async (req, res) => {
   res.json(qrCodes);
 });
 
-// ─── API: SETTINGS ────────────────────────────────────────────────────────────
-app.get('/api/settings', (req, res) => {
-  const s = db.prepare('SELECT * FROM settings WHERE id = 1').get();
-  res.json({ restaurantName: s.restaurant_name, currency: s.currency, wifiName: s.wifi_name });
-});
-
-app.put('/api/settings', (req, res) => {
-  const { restaurantName, currency, wifiName } = req.body;
-  db.prepare('UPDATE settings SET restaurant_name=?,currency=?,wifi_name=? WHERE id=1').run(restaurantName || 'My Restaurant', currency || '₹', wifiName || '');
-  res.json({ success: true });
-});
-
 // ─── PAGES ────────────────────────────────────────────────────────────────────
 app.get('/order', (req, res) => res.sendFile(path.join(__dirname, 'public', 'customer.html')));
 app.get('/kitchen', (req, res) => res.sendFile(path.join(__dirname, 'public', 'kitchen.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/system-config', (req, res) => res.sendFile(path.join(__dirname, 'public', 'system-config.html')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 3000;
