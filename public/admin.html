@@ -3,319 +3,289 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel - SmartOrder</title>
+<title>Admin Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f4f5f7;
-    --white: #ffffff;
-    --surface: #ffffff;
-    --border: #e8eaed;
-    --text: #1a1a2e;
-    --muted: #6b7280;
-    --primary: #fc8019;
-    --primary-light: rgba(252,128,25,0.1);
-    --green: #10b981;
-    --green-light: rgba(16,185,129,0.1);
-    --blue: #3b82f6;
-    --blue-light: rgba(59,130,246,0.1);
-    --red: #ef4444;
-    --red-light: rgba(239,68,68,0.1);
-    --amber: #f59e0b;
-    --amber-light: rgba(245,158,11,0.1);
-    --purple: #8b5cf6;
-    --purple-light: rgba(139,92,246,0.1);
-    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-    --radius: 14px;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+:root {
+  --bg:#f3f4f6; --white:#fff; --border:#e5e7eb; --text:#111827;
+  --muted:#6b7280; --orange:#f97316; --orange-l:rgba(249,115,22,0.1);
+  --green:#10b981; --green-l:rgba(16,185,129,0.1);
+  --blue:#3b82f6; --blue-l:rgba(59,130,246,0.1);
+  --red:#ef4444; --red-l:rgba(239,68,68,0.1);
+  --purple:#8b5cf6; --purple-l:rgba(139,92,246,0.1);
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 4px 14px rgba(0,0,0,0.04);
+  --r:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
-  /* SIDEBAR + LAYOUT */
-  .layout { display:flex; min-height:100vh; }
-  .sidebar {
-    width:240px; background:var(--text); flex-shrink:0;
-    display:flex; flex-direction:column; position:sticky; top:0; height:100vh;
-  }
-  .sidebar-brand { padding:24px 20px 20px; border-bottom:1px solid rgba(255,255,255,0.1); }
-  .sidebar-brand h1 { font-size:1.1rem; font-weight:800; color:white; }
-  .sidebar-brand p { font-size:0.72rem; color:rgba(255,255,255,0.4); margin-top:2px; }
-  .nav { padding:16px 12px; flex:1; display:flex; flex-direction:column; gap:2px; }
-  .nav-item {
-    display:flex; align-items:center; gap:10px; padding:10px 12px;
-    border-radius:9px; font-size:0.88rem; font-weight:600; color:rgba(255,255,255,0.55);
-    cursor:pointer; border:none; background:none; width:100%; text-align:left;
-    font-family:'DM Sans',sans-serif; transition:all 0.15s;
-  }
-  .nav-item:hover { background:rgba(255,255,255,0.07); color:white; }
-  .nav-item.active { background:var(--primary); color:white; }
-  .nav-item .icon { font-size:1rem; width:20px; }
-  .sidebar-footer { padding:16px 12px; border-top:1px solid rgba(255,255,255,0.1); }
-  .kitchen-link {
-    display:flex; align-items:center; gap:10px; padding:10px 12px;
-    background:rgba(16,185,129,0.15); color:var(--green);
-    border-radius:9px; font-size:0.85rem; font-weight:700;
-    text-decoration:none; transition:all 0.15s;
-  }
-  .kitchen-link:hover { background:rgba(16,185,129,0.25); }
+.layout{display:flex;min-height:100vh;}
 
-  /* MAIN */
-  .main { flex:1; overflow:auto; }
-  .topbar {
-    background:var(--white); border-bottom:1px solid var(--border);
-    padding:0 28px; height:60px; display:flex; align-items:center; justify-content:space-between;
-    position:sticky; top:0; z-index:50;
-  }
-  .page-title { font-size:1.1rem; font-weight:800; }
-  .topbar-right { display:flex; align-items:center; gap:10px; }
-  .topbar-badge { background:var(--primary-light); color:var(--primary); font-size:0.75rem; font-weight:700; padding:5px 12px; border-radius:20px; }
+/* SIDEBAR */
+.sidebar{width:230px;background:var(--text);flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+.sb-brand{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.sb-logo{width:36px;height:36px;border-radius:8px;object-fit:cover;display:none;margin-bottom:8px;}
+.sb-brand h1{font-size:1rem;font-weight:800;color:white;}
+.sb-brand p{font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:2px;}
+.nav{padding:14px 10px;flex:1;display:flex;flex-direction:column;gap:2px;}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.5);cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.nav-btn:hover{background:rgba(255,255,255,0.07);color:white;}
+.nav-btn.active{background:var(--orange);color:white;}
+.nav-btn .ico{width:18px;text-align:center;}
+.sb-footer{padding:14px 10px;border-top:1px solid rgba(255,255,255,0.1);display:flex;flex-direction:column;gap:8px;}
+.ext-link{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;font-size:0.82rem;font-weight:700;text-decoration:none;transition:all 0.15s;}
+.ext-link.kitchen{background:rgba(16,185,129,0.15);color:var(--green);}
+.ext-link.config{background:rgba(249,115,22,0.15);color:var(--orange);}
+.ext-link:hover{filter:brightness(1.15);}
 
-  /* CONTENT */
-  .content { padding:24px 28px; }
-  .tab-panel { display:none; }
-  .tab-panel.active { display:block; }
+/* MAIN */
+.main{flex:1;overflow:auto;}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 26px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.page-title{font-size:1.05rem;font-weight:800;}
+.active-badge{background:var(--orange-l);color:var(--orange);font-size:0.75rem;font-weight:700;padding:5px 12px;border-radius:20px;}
 
-  /* STATS GRID */
-  .stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; margin-bottom:28px; }
-  .stat-card { background:var(--white); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:10px; border:1px solid var(--border); }
-  .stat-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
-  .stat-icon.orange { background:var(--primary-light); }
-  .stat-icon.green { background:var(--green-light); }
-  .stat-icon.blue { background:var(--blue-light); }
-  .stat-icon.purple { background:var(--purple-light); }
-  .stat-value { font-size:2rem; font-weight:800; line-height:1; }
-  .stat-value.orange { color:var(--primary); }
-  .stat-value.green { color:var(--green); }
-  .stat-value.blue { color:var(--blue); }
-  .stat-value.purple { color:var(--purple); }
-  .stat-label { font-size:0.8rem; color:var(--muted); font-weight:600; }
+.content{padding:22px 26px;}
+.panel{display:none;}
+.panel.active{display:block;}
 
-  /* SECTION */
-  .section { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid var(--border); margin-bottom:20px; overflow:hidden; }
-  .section-header { padding:18px 22px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-  .section-header h2 { font-size:0.95rem; font-weight:800; }
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--white);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);border:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.stat-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
+.si-orange{background:var(--orange-l);} .si-green{background:var(--green-l);} .si-blue{background:var(--blue-l);} .si-purple{background:var(--purple-l);}
+.stat-val{font-size:1.9rem;font-weight:800;line-height:1;}
+.sv-orange{color:var(--orange);} .sv-green{color:var(--green);} .sv-blue{color:var(--blue);} .sv-purple{color:var(--purple);}
+.stat-lbl{font-size:0.77rem;color:var(--muted);font-weight:600;}
 
-  /* TABLE */
-  table { width:100%; border-collapse:collapse; }
-  th { padding:12px 20px; text-align:left; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--muted); background:#fafafa; border-bottom:1px solid var(--border); }
-  td { padding:14px 20px; font-size:0.88rem; border-bottom:1px solid #f5f5f7; }
-  tr:last-child td { border:none; }
-  tr:hover td { background:#fafcff; }
+/* SECTION */
+.section{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:18px;}
+.sec-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.sec-head h2{font-size:0.92rem;font-weight:800;}
 
-  /* STATUS CHIPS */
-  .chip { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; }
-  .chip-pending { background:var(--primary-light); color:var(--primary); }
-  .chip-preparing { background:var(--amber-light); color:var(--amber); }
-  .chip-ready { background:var(--green-light); color:var(--green); }
-  .chip-completed { background:#f0f0f0; color:var(--muted); }
+/* TABLE */
+table{width:100%;border-collapse:collapse;}
+th{padding:11px 18px;text-align:left;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);background:#fafafa;border-bottom:1px solid var(--border);}
+td{padding:12px 18px;font-size:0.86rem;border-bottom:1px solid #f5f5f7;}
+tr:last-child td{border:none;}
+tr:hover td{background:#fafcff;}
 
-  /* BUTTONS */
-  .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:9px; font-size:0.85rem; font-weight:700; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s; }
-  .btn:hover { filter:brightness(0.93); transform:translateY(-1px); }
-  .btn-primary { background:var(--primary); color:white; }
-  .btn-danger { background:var(--red-light); color:var(--red); }
-  .btn-danger:hover { background:var(--red); color:white; }
-  .btn-sm { padding:6px 12px; font-size:0.78rem; }
+/* CHIP */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:0.7rem;font-weight:700;text-transform:uppercase;}
+.chip-pending{background:var(--orange-l);color:var(--orange);}
+.chip-completed{background:#f0f0f0;color:var(--muted);}
+.chip-urgent{background:var(--red-l);color:var(--red);}
 
-  /* FORM */
-  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:22px; }
-  .form-grid .full { grid-column:1/-1; }
-  .form-group { display:flex; flex-direction:column; gap:6px; }
-  label { font-size:0.78rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
-  input, select, textarea { padding:10px 14px; border:2px solid var(--border); border-radius:9px; font-size:0.9rem; font-family:'DM Sans',sans-serif; color:var(--text); outline:none; transition:border-color 0.2s; background:var(--white); }
-  input:focus, select:focus, textarea:focus { border-color:var(--primary); }
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;font-size:0.82rem;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.btn:hover{filter:brightness(0.92);transform:translateY(-1px);}
+.btn-primary{background:var(--orange);color:white;}
+.btn-green{background:var(--green);color:white;}
+.btn-danger{background:var(--red-l);color:var(--red);}
+.btn-danger:hover{background:var(--red);color:white;}
+.btn-sm{padding:6px 12px;font-size:0.76rem;}
+.btn-print{background:var(--blue);color:white;}
 
-  /* MODAL */
-  .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-  .modal.active { display:flex; }
-  .modal-box { background:var(--white); border-radius:18px; max-width:520px; width:90%; max-height:90vh; overflow:auto; box-shadow:0 25px 60px rgba(0,0,0,0.25); }
-  .modal-head { padding:22px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-  .modal-head h3 { font-size:1rem; font-weight:800; }
-  .close-btn { background:#f0f0f0; border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; }
+/* BILL PANEL */
+.tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:20px;}
+.table-tile{background:var(--white);border:2px solid var(--border);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.table-tile:hover{border-color:var(--orange);transform:translateY(-2px);}
+.table-tile.occupied{border-color:var(--orange);background:var(--orange-l);}
+.table-tile.available{opacity:0.55;}
+.tt-num{font-size:1.8rem;font-weight:800;}
+.tt-status{font-size:0.72rem;font-weight:700;text-transform:uppercase;margin-top:4px;}
+.tt-status.occ{color:var(--orange);}
+.tt-status.avail{color:var(--muted);}
 
-  /* QR GRID */
-  .qr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:16px; padding:22px; }
-  .qr-card { border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
-  .qr-card .table-label { font-size:1.1rem; font-weight:800; margin-bottom:10px; }
-  .qr-card img { width:100%; border-radius:8px; }
-  .qr-url { font-size:0.7rem; color:var(--muted); margin-top:8px; word-break:break-all; }
+/* BILL DETAIL */
+#billDetail{display:none;}
+.bill-box{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--border);padding:28px;max-width:600px;}
+.bill-head{text-align:center;padding-bottom:20px;border-bottom:2px dashed var(--border);margin-bottom:20px;}
+.bill-head h2{font-size:1.4rem;font-weight:800;}
+.bill-head p{color:var(--muted);font-size:0.85rem;}
+.bill-items table{width:100%;}
+.bill-total{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:2px solid var(--text);margin-top:10px;font-size:1.2rem;font-weight:800;}
+.bill-actions{display:flex;gap:12px;margin-top:20px;}
 
-  /* SETTINGS */
-  .settings-section { padding:22px; display:flex; flex-direction:column; gap:20px; max-width:560px; }
+/* ANALYTICS */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+@media(max-width:700px){.analytics-grid{grid-template-columns:1fr;}}
+.analytics-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--border);padding:18px 20px;}
+.analytics-card h3{font-size:0.85rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;}
+.top-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.88rem;}
+.top-item:last-child{border:none;}
+.top-bar{background:var(--orange-l);height:6px;border-radius:3px;margin-top:4px;}
 
-  /* TOAST */
-  .toast { position:fixed; bottom:24px; right:24px; z-index:9999; background:var(--text); color:white; padding:14px 20px; border-radius:12px; font-size:0.88rem; font-weight:600; display:flex; align-items:center; gap:10px; box-shadow:0 10px 40px rgba(0,0,0,0.2); transform:translateY(100px); opacity:0; transition:all 0.3s; }
-  .toast.show { transform:translateY(0); opacity:1; }
-  .toast.success { border-left:4px solid var(--green); }
-  .toast.error { border-left:4px solid var(--red); }
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:20px;}
+.form-grid .full{grid-column:1/-1;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+label{font-size:0.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
+input,select,textarea{padding:10px 13px;border:2px solid var(--border);border-radius:9px;font-size:0.88rem;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color 0.2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--orange);}
 
-  @media(max-width:900px) {
-    .sidebar { display:none; }
-    .topbar { padding:0 16px; }
-    .content { padding:16px; }
-  }
-  @media print {
-    .sidebar,.topbar { display:none; }
-    .qr-grid { position:absolute; left:0; top:0; width:100%; }
-    .btn,.section-header { display:none; }
-  }
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal.active{display:flex;}
+.modal-box{background:var(--white);border-radius:18px;max-width:500px;width:92%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.modal-head{padding:20px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-head h3{font-size:0.95rem;font-weight:800;}
+.close-x{background:#f0f0f0;border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem;}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:var(--text);color:white;padding:12px 18px;border-radius:12px;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,0.2);transform:translateY(80px);opacity:0;transition:all 0.3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.ok{border-left:4px solid var(--green);}
+.toast.err{border-left:4px solid var(--red);}
+
+/* QR */
+.qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;padding:20px;}
+.qr-card{border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.qr-card .q-num{font-size:1.1rem;font-weight:800;margin-bottom:8px;}
+.qr-card img{width:100%;border-radius:6px;}
+.qr-url{font-size:0.68rem;color:var(--muted);margin-top:6px;word-break:break-all;}
+
+@media(max-width:900px){.sidebar{display:none;}.topbar,.content{padding-left:16px;padding-right:16px;}}
+@media print{.sidebar,.topbar,.bill-actions button:not(.btn-print),.nav-btn{display:none!important;}.main{padding:0;}.bill-box{box-shadow:none;border:none;}}
 </style>
 </head>
 <body>
 <div class="layout">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <h1>🍽️ SmartOrder</h1>
-      <p id="restaurantNameSub">Admin Panel</p>
-    </div>
-    <nav class="nav">
-      <button class="nav-item active" onclick="showTab('dashboard',this)"><span class="icon">📊</span> Dashboard</button>
-      <button class="nav-item" onclick="showTab('orders',this)"><span class="icon">🛒</span> Live Orders</button>
-      <button class="nav-item" onclick="showTab('menu',this)"><span class="icon">📋</span> Menu</button>
-      <button class="nav-item" onclick="showTab('history',this)"><span class="icon">📜</span> History</button>
-      <button class="nav-item" onclick="showTab('qr',this)"><span class="icon">📱</span> QR Codes</button>
-      <button class="nav-item" onclick="showTab('settings',this)"><span class="icon">⚙️</span> Settings</button>
-    </nav>
-    <div class="sidebar-footer">
-      <a href="/kitchen" target="_blank" class="kitchen-link"><span>👨‍🍳</span> Kitchen Display</a>
-    </div>
-  </aside>
+<aside class="sidebar">
+  <div class="sb-brand">
+    <img id="sbLogo" class="sb-logo" src="" alt="">
+    <h1 id="sbName">SmartOrder</h1>
+    <p>Admin Panel</p>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPanel('dashboard',this)"><span class="ico">📊</span> Dashboard</button>
+    <button class="nav-btn" onclick="showPanel('analytics',this)"><span class="ico">📈</span> Analytics</button>
+    <button class="nav-btn" onclick="showPanel('orders',this)"><span class="ico">⚡</span> Live Orders</button>
+    <button class="nav-btn" onclick="showPanel('bill',this)"><span class="ico">🧾</span> Bill / Tables</button>
+    <button class="nav-btn" onclick="showPanel('menu',this)"><span class="ico">📋</span> Menu</button>
+    <button class="nav-btn" onclick="showPanel('history',this)"><span class="ico">📜</span> History</button>
+    <button class="nav-btn" onclick="showPanel('qr',this)"><span class="ico">📱</span> QR Codes</button>
+  </nav>
+  <div class="sb-footer">
+    <a href="/kitchen" target="_blank" class="ext-link kitchen">👨‍🍳 Kitchen Display</a>
+    <a href="/system-config" target="_blank" class="ext-link config">⚙️ System Config</a>
+  </div>
+</aside>
 
-  <!-- MAIN -->
-  <div class="main">
-    <div class="topbar">
-      <div class="page-title" id="pageTitle">Dashboard</div>
-      <div class="topbar-right">
-        <div class="topbar-badge" id="activeBadge">0 active orders</div>
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="pageTitle">Dashboard</div>
+    <div class="active-badge" id="activeBadge">0 active orders</div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div id="p-dashboard" class="panel active">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon si-orange">🛒</div><div class="stat-val sv-orange" id="sTodayOrders">0</div><div class="stat-lbl">Today's Orders</div></div>
+        <div class="stat-card"><div class="stat-icon si-green">💰</div><div class="stat-val sv-green" id="sTodaySales">₹0</div><div class="stat-lbl">Today's Revenue</div></div>
+        <div class="stat-card"><div class="stat-icon si-blue">⚡</div><div class="stat-val sv-blue" id="sActive">0</div><div class="stat-lbl">Active Orders</div></div>
+        <div class="stat-card"><div class="stat-icon si-purple">🍛</div><div class="stat-val sv-purple" id="sMenuItems">0</div><div class="stat-lbl">Menu Items</div></div>
+      </div>
+      <div class="section">
+        <div class="sec-head"><h2>Recent Orders</h2><button class="btn btn-sm btn-primary" onclick="fetchData()">↻ Refresh</button></div>
+        <table><thead><tr><th>#</th><th>Table</th><th>Items</th><th>Total</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody id="tRecent"></tbody></table>
       </div>
     </div>
 
-    <div class="content">
-
-      <!-- DASHBOARD -->
-      <div id="tab-dashboard" class="tab-panel active">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon orange">🛒</div>
-            <div class="stat-value orange" id="statTodayOrders">0</div>
-            <div class="stat-label">Today's Orders</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green">💰</div>
-            <div class="stat-value green" id="statTodaySales">₹0</div>
-            <div class="stat-label">Today's Revenue</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon blue">⚡</div>
-            <div class="stat-value blue" id="statActive">0</div>
-            <div class="stat-label">Active Orders</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon purple">🍛</div>
-            <div class="stat-value purple" id="statMenuItems">0</div>
-            <div class="stat-label">Menu Items</div>
-          </div>
+    <!-- ANALYTICS -->
+    <div id="p-analytics" class="panel">
+      <div class="analytics-grid">
+        <div class="analytics-card">
+          <h3>Top Items Today</h3>
+          <div id="topItems"><p style="color:var(--muted);font-size:0.85rem">No data yet</p></div>
         </div>
-
-        <div class="section">
-          <div class="section-header">
-            <h2>Recent Orders</h2>
-            <button class="btn btn-sm btn-primary" onclick="fetchData()">↻ Refresh</button>
-          </div>
-          <table>
-            <thead><tr><th>#</th><th>Table</th><th>Items</th><th>Total</th><th>Time</th><th>Status</th></tr></thead>
-            <tbody id="recentOrdersBody"></tbody>
-          </table>
+        <div class="analytics-card">
+          <h3>Table Activity (Active)</h3>
+          <div id="tableWise"><p style="color:var(--muted);font-size:0.85rem">No active orders</p></div>
         </div>
       </div>
-
-      <!-- LIVE ORDERS -->
-      <div id="tab-orders" class="tab-panel">
-        <div class="section">
-          <div class="section-header"><h2>Live Orders</h2><button class="btn btn-sm btn-primary" onclick="fetchData()">↻ Refresh</button></div>
-          <table>
-            <thead><tr><th>#</th><th>Table</th><th>Items</th><th>Total</th><th>Status</th><th>Urgent</th><th>Time</th></tr></thead>
-            <tbody id="liveOrdersBody"></tbody>
-          </table>
+      <div class="section">
+        <div class="sec-head"><h2>Today's Summary</h2></div>
+        <div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px">
+          <div><div style="font-size:2rem;font-weight:800;color:var(--orange)" id="aSales">₹0</div><div style="font-size:0.8rem;color:var(--muted);font-weight:600">Total Revenue</div></div>
+          <div><div style="font-size:2rem;font-weight:800;color:var(--blue)" id="aOrders">0</div><div style="font-size:0.8rem;color:var(--muted);font-weight:600">Total Orders</div></div>
+          <div><div style="font-size:2rem;font-weight:800;color:var(--green)" id="aAvg">₹0</div><div style="font-size:0.8rem;color:var(--muted);font-weight:600">Avg Order Value</div></div>
         </div>
       </div>
+    </div>
 
-      <!-- MENU -->
-      <div id="tab-menu" class="tab-panel">
+    <!-- LIVE ORDERS -->
+    <div id="p-orders" class="panel">
+      <div class="section">
+        <div class="sec-head"><h2>Live Active Orders</h2><button class="btn btn-sm btn-primary" onclick="fetchData()">↻ Refresh</button></div>
+        <table><thead><tr><th>#</th><th>Table</th><th>Items</th><th>Total</th><th>Urgent</th><th>Time</th><th>Action</th></tr></thead>
+        <tbody id="tLive"></tbody></table>
+      </div>
+    </div>
+
+    <!-- BILL / TABLES -->
+    <div id="p-bill" class="panel">
+      <div id="billTableView">
         <div class="section">
-          <div class="section-header">
-            <h2>Menu Items</h2>
-            <button class="btn btn-primary" onclick="openAddModal()">+ Add Item</button>
-          </div>
-          <table>
-            <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Type</th><th>Actions</th></tr></thead>
-            <tbody id="menuBody"></tbody>
-          </table>
+          <div class="sec-head"><h2>Select Table to View Bill</h2></div>
+          <div class="tables-grid" id="tablesGrid"></div>
         </div>
       </div>
-
-      <!-- HISTORY -->
-      <div id="tab-history" class="tab-panel">
-        <div class="section">
-          <div class="section-header"><h2>Order History</h2></div>
-          <table>
-            <thead><tr><th>#</th><th>Table</th><th>Items</th><th>Total</th><th>Ordered</th><th>Completed</th></tr></thead>
-            <tbody id="historyBody"></tbody>
-          </table>
+      <div id="billDetail">
+        <div style="margin-bottom:16px">
+          <button class="btn btn-sm" style="background:#f0f0f0;color:var(--text)" onclick="closeBillDetail()">← Back to Tables</button>
+        </div>
+        <div class="bill-box" id="billBox">
+          <!-- filled dynamically -->
         </div>
       </div>
+    </div>
 
-      <!-- QR CODES -->
-      <div id="tab-qr" class="tab-panel">
-        <div class="section">
-          <div class="section-header"><h2>Table QR Codes</h2><button class="btn btn-primary" onclick="window.print()">🖨️ Print All</button></div>
-          <div class="qr-grid" id="qrGrid">
-            <p style="padding:30px;color:var(--muted)">Loading QR codes...</p>
-          </div>
-        </div>
+    <!-- MENU -->
+    <div id="p-menu" class="panel">
+      <div class="section">
+        <div class="sec-head"><h2>Menu Items</h2><button class="btn btn-primary" onclick="openAddModal()">+ Add Item</button></div>
+        <table><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Type</th><th>Action</th></tr></thead>
+        <tbody id="tMenu"></tbody></table>
       </div>
+    </div>
 
-      <!-- SETTINGS -->
-      <div id="tab-settings" class="tab-panel">
-        <div class="section">
-          <div class="section-header"><h2>Restaurant Settings</h2></div>
-          <div class="settings-section">
-            <div class="form-group">
-              <label>Restaurant Name</label>
-              <input type="text" id="settingName" placeholder="My Restaurant">
-            </div>
-            <div class="form-group">
-              <label>Currency Symbol</label>
-              <input type="text" id="settingCurrency" placeholder="₹" style="max-width:100px">
-            </div>
-            <div class="form-group">
-              <label>WiFi Network Name <span style="font-weight:400;text-transform:none;font-size:0.85em">(for customer WiFi check)</span></label>
-              <input type="text" id="settingWifi" placeholder="e.g. Restaurant_WiFi">
-              <small style="color:var(--muted);font-size:0.8rem;">Customers will be asked to connect to this network before ordering. Leave blank to disable the check.</small>
-            </div>
-            <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
-          </div>
-        </div>
+    <!-- HISTORY -->
+    <div id="p-history" class="panel">
+      <div class="section">
+        <div class="sec-head"><h2>Order History</h2></div>
+        <table><thead><tr><th>#</th><th>Table</th><th>Items</th><th>Total</th><th>Ordered</th><th>Completed</th></tr></thead>
+        <tbody id="tHistory"></tbody></table>
       </div>
+    </div>
 
-    </div><!-- /content -->
-  </div><!-- /main -->
-</div><!-- /layout -->
+    <!-- QR CODES -->
+    <div id="p-qr" class="panel">
+      <div class="section">
+        <div class="sec-head"><h2>Table QR Codes</h2><button class="btn btn-primary" onclick="window.print()">🖨️ Print All</button></div>
+        <div class="qr-grid" id="qrGrid"><p style="padding:30px;color:var(--muted)">Loading...</p></div>
+      </div>
+    </div>
 
-<!-- ADD MENU ITEM MODAL -->
+  </div>
+</div>
+</div>
+
+<!-- ADD MENU MODAL -->
 <div class="modal" id="menuModal">
   <div class="modal-box">
     <div class="modal-head">
-      <h3 id="modalTitle">Add Menu Item</h3>
-      <button class="close-btn" onclick="closeModal()">×</button>
+      <h3>Add Menu Item</h3>
+      <button class="close-x" onclick="closeModal()">×</button>
     </div>
-    <form onsubmit="saveMenuItem(event)">
+    <form onsubmit="saveItem(event)">
       <div class="form-grid">
-        <div class="form-group"><label>Item Name *</label><input type="text" id="itemName" required></div>
-        <div class="form-group"><label>Category *</label>
-          <select id="itemCategory" required>
+        <div class="fg"><label>Name *</label><input type="text" id="iName" required></div>
+        <div class="fg"><label>Category *</label>
+          <select id="iCat" required>
             <option value="Starters">Starters</option>
             <option value="Main Course">Main Course</option>
             <option value="Breads">Breads</option>
@@ -324,18 +294,16 @@
             <option value="Desserts">Desserts</option>
           </select>
         </div>
-        <div class="form-group"><label>Price (₹) *</label><input type="number" id="itemPrice" required min="0"></div>
-        <div class="form-group"><label>Type *</label>
-          <select id="itemVeg">
+        <div class="fg"><label>Price *</label><input type="number" id="iPrice" required min="0"></div>
+        <div class="fg"><label>Type *</label>
+          <select id="iVeg">
             <option value="true">🟢 Vegetarian</option>
             <option value="false">🔴 Non-Vegetarian</option>
           </select>
         </div>
-        <div class="form-group full"><label>Description</label><textarea id="itemDesc" rows="2" placeholder="Brief description"></textarea></div>
-        <div class="form-group full"><label>Image URL</label><input type="text" id="itemImage" placeholder="https://..."></div>
-        <div class="form-group full">
-          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Save Item</button>
-        </div>
+        <div class="fg full"><label>Description</label><textarea id="iDesc" rows="2"></textarea></div>
+        <div class="fg full"><label>Image URL</label><input type="text" id="iImg" placeholder="https://..."></div>
+        <div class="full"><button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Save Item</button></div>
       </div>
     </form>
   </div>
@@ -345,184 +313,241 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-  const socket = io();
-  let menu = [], orders = [], orderHistory = [];
-  let currentTab = 'dashboard';
+const socket = io();
+let menu=[], orders=[], orderHistory=[], cfg={}, allTables=[];
 
-  socket.emit('join-admin');
+socket.emit('join-admin');
 
-  function showTab(name, btn) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    if (btn) btn.classList.add('active');
-    document.getElementById('pageTitle').textContent = btn?.textContent.trim() || name;
-    currentTab = name;
-    if (name === 'qr') loadQRCodes();
-    if (name === 'settings') loadSettings();
+function showPanel(name, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('p-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('pageTitle').textContent = btn ? btn.textContent.trim() : name;
+  if (name==='qr') loadQR();
+  if (name==='analytics') loadAnalytics();
+  if (name==='bill') renderTables();
+}
+
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = (type==='ok'?'✓ ':'✕ ') + msg;
+  t.className = `toast ${type} show`;
+  setTimeout(()=>{t.className='toast';}, 3000);
+}
+
+async function fetchData() {
+  const [mR,oR,hR,rR,cfgR,tR] = await Promise.all([
+    fetch('/api/menu'), fetch('/api/orders'), fetch('/api/orders/history'),
+    fetch('/api/reports/today'), fetch('/api/config'), fetch('/api/tables')
+  ]);
+  menu = await mR.json(); orders = await oR.json();
+  orderHistory = await hR.json(); const report = await rR.json();
+  cfg = await cfgR.json(); allTables = await tR.json();
+
+  applyBranding(cfg);
+  renderDashboard(report);
+  renderLive();
+  renderMenu();
+  renderHistory();
+  document.getElementById('activeBadge').textContent = orders.length + ' active order' + (orders.length!==1?'s':'');
+}
+
+function applyBranding(c) {
+  if (c.restaurantName) {
+    document.getElementById('sbName').textContent = c.restaurantName;
+    document.title = c.restaurantName + ' — Admin';
   }
-
-  function showToast(msg, type='success') {
-    const t = document.getElementById('toast');
-    t.textContent = (type === 'success' ? '✓ ' : '✕ ') + msg;
-    t.className = `toast ${type} show`;
-    setTimeout(() => { t.className = 'toast'; }, 3000);
+  if (c.logo) {
+    const el = document.getElementById('sbLogo');
+    el.src = c.logo; el.style.display = 'block';
   }
+}
 
-  async function fetchData() {
-    const [menuRes, ordersRes, historyRes, reportRes] = await Promise.all([
-      fetch('/api/menu'), fetch('/api/orders'), fetch('/api/orders/history'), fetch('/api/reports/today')
-    ]);
-    menu = await menuRes.json();
-    orders = await ordersRes.json();
-    orderHistory = await historyRes.json();
-    const report = await reportRes.json();
-    renderDashboard(report);
-    renderLiveOrders();
-    renderMenu();
-    renderHistory();
-    document.getElementById('activeBadge').textContent = orders.length + ' active order' + (orders.length !== 1 ? 's' : '');
-  }
+function renderDashboard(report) {
+  document.getElementById('sTodayOrders').textContent = report.totalOrders;
+  document.getElementById('sTodaySales').textContent = (cfg.currency||'₹') + report.totalSales;
+  document.getElementById('sActive').textContent = orders.length;
+  document.getElementById('sMenuItems').textContent = menu.length;
+  const recent = [...orders].slice(0,10);
+  document.getElementById('tRecent').innerHTML = recent.map(o=>`
+    <tr>
+      <td><strong>#${o.orderNumber}</strong></td>
+      <td>Table ${o.tableNumber}</td>
+      <td>${o.items.length} items</td>
+      <td><strong>${cfg.currency||'₹'}${o.total}</strong></td>
+      <td style="color:var(--muted);font-size:0.8rem">${o.createdAt}</td>
+      <td><span class="chip chip-pending">Pending</span>${o.isUrgent?'<span class="chip chip-urgent" style="margin-left:4px">Urgent</span>':''}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--muted)">No orders yet</td></tr>';
+}
 
-  function renderDashboard(report) {
-    document.getElementById('statTodayOrders').textContent = report.totalOrders;
-    document.getElementById('statTodaySales').textContent = '₹' + report.totalSales;
-    document.getElementById('statActive').textContent = orders.length;
-    document.getElementById('statMenuItems').textContent = menu.length;
-    const recent = [...orders].reverse().slice(0, 10);
-    document.getElementById('recentOrdersBody').innerHTML = recent.map(o => `
-      <tr>
-        <td><strong>#${o.orderNumber}</strong></td>
-        <td>Table ${o.tableNumber}</td>
-        <td>${o.items.length} items</td>
-        <td><strong>₹${o.total}</strong></td>
-        <td style="color:var(--muted);font-size:0.82rem">${o.createdAt}</td>
-        <td><span class="chip chip-${o.status}">${o.status}</span>${o.isUrgent ? ' <span class="chip" style="background:var(--red-light);color:var(--red)">🔴</span>' : ''}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">No orders yet</td></tr>';
-  }
+function renderLive() {
+  document.getElementById('tLive').innerHTML = orders.map(o=>`
+    <tr>
+      <td><strong>#${o.orderNumber}</strong></td>
+      <td><strong>Table ${o.tableNumber}</strong></td>
+      <td style="font-size:0.8rem">${o.items.map(i=>i.name+'×'+i.quantity).join(', ')}</td>
+      <td><strong>${cfg.currency||'₹'}${o.total}</strong></td>
+      <td>${o.isUrgent?'<span class="chip chip-urgent">🔴 Yes</span>':'—'}</td>
+      <td style="font-size:0.8rem;color:var(--muted)">${o.createdAt}</td>
+      <td><button class="btn btn-sm btn-green" onclick="completeOrder('${o.id}')">✓ Complete</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted)">No active orders</td></tr>';
+}
 
-  function renderLiveOrders() {
-    document.getElementById('liveOrdersBody').innerHTML = orders.map(o => `
-      <tr>
-        <td><strong>#${o.orderNumber}</strong></td>
-        <td><strong>Table ${o.tableNumber}</strong></td>
-        <td>${o.items.map(i => `${i.name}×${i.quantity}`).join(', ')}</td>
-        <td><strong>₹${o.total}</strong></td>
-        <td><span class="chip chip-${o.status}">${o.status}</span></td>
-        <td>${o.isUrgent ? '<span style="color:var(--red);font-weight:700">🔴 Yes</span>' : '—'}</td>
-        <td style="font-size:0.82rem;color:var(--muted)">${o.createdAt}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">No active orders</td></tr>';
-  }
+async function completeOrder(id) {
+  await fetch(`/api/order/${id}/status`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'completed'})});
+  fetchData(); toast('Order completed!');
+}
 
-  function renderMenu() {
-    document.getElementById('menuBody').innerHTML = menu.map(item => `
-      <tr>
-        <td><strong>${item.name}</strong></td>
-        <td>${item.category}</td>
-        <td>₹${item.price}</td>
-        <td>${item.veg ? '🟢 Veg' : '🔴 Non-Veg'}</td>
-        <td><button class="btn btn-sm btn-danger" onclick="deleteItem('${item.id}')">Delete</button></td>
-      </tr>
-    `).join('') || '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">No menu items</td></tr>';
-  }
+function renderMenu() {
+  document.getElementById('tMenu').innerHTML = menu.map(item=>`
+    <tr>
+      <td><strong>${item.name}</strong></td>
+      <td>${item.category}</td>
+      <td>${cfg.currency||'₹'}${item.price}</td>
+      <td>${item.veg?'🟢 Veg':'🔴 Non-Veg'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteItem('${item.id}')">Delete</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;padding:28px;color:var(--muted)">No items</td></tr>';
+}
 
-  function renderHistory() {
-    document.getElementById('historyBody').innerHTML = orderHistory.map(o => `
-      <tr>
-        <td>#${o.orderNumber}</td>
-        <td>Table ${o.tableNumber}</td>
-        <td style="font-size:0.82rem;color:var(--muted)">${o.items.map(i => `${i.name}(${i.quantity})`).join(', ')}</td>
-        <td>₹${o.total}</td>
-        <td style="font-size:0.82rem;color:var(--muted)">${o.createdAt}</td>
-        <td style="font-size:0.82rem;color:var(--green)">${o.completedAt}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">No history</td></tr>';
-  }
+function renderHistory() {
+  document.getElementById('tHistory').innerHTML = orderHistory.map(o=>`
+    <tr>
+      <td>#${o.orderNumber}</td>
+      <td>Table ${o.tableNumber}</td>
+      <td style="font-size:0.8rem;color:var(--muted)">${o.items.map(i=>i.name+'('+i.quantity+')').join(', ')}</td>
+      <td>${cfg.currency||'₹'}${o.total}</td>
+      <td style="font-size:0.8rem;color:var(--muted)">${o.createdAt}</td>
+      <td style="font-size:0.8rem;color:var(--green)">${o.completedAt}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--muted)">No history</td></tr>';
+}
 
-  async function loadQRCodes() {
-    document.getElementById('qrGrid').innerHTML = '<p style="padding:30px;color:var(--muted)">Generating...</p>';
-    const res = await fetch('/api/qr/generate/all');
-    const codes = await res.json();
-    document.getElementById('qrGrid').innerHTML = codes.map(qr => `
-      <div class="qr-card">
-        <div class="table-label">Table ${qr.tableNumber}</div>
-        <img src="${qr.qrCode}" alt="QR">
-        <div class="qr-url">${qr.url}</div>
-      </div>
-    `).join('');
-  }
+async function loadAnalytics() {
+  const res = await fetch('/api/reports/analytics');
+  const data = await res.json();
+  const cur = cfg.currency || '₹';
+  document.getElementById('aSales').textContent = cur + data.todaySales;
+  document.getElementById('aOrders').textContent = data.todayOrders;
+  document.getElementById('aAvg').textContent = data.todayOrders > 0 ? cur + Math.round(data.todaySales/data.todayOrders) : cur+'0';
 
-  async function loadSettings() {
-    const res = await fetch('/api/settings');
-    const s = await res.json();
-    document.getElementById('settingName').value = s.restaurantName || '';
-    document.getElementById('settingCurrency').value = s.currency || '₹';
-    document.getElementById('settingWifi').value = s.wifiName || '';
-  }
+  const maxCount = data.topItems[0]?.count || 1;
+  document.getElementById('topItems').innerHTML = data.topItems.length ? data.topItems.map(i=>`
+    <div class="top-item">
+      <div><div>${i.name}</div><div class="top-bar" style="width:${Math.round(i.count/maxCount*100)}%"></div></div>
+      <strong>${i.count} sold</strong>
+    </div>
+  `).join('') : '<p style="color:var(--muted);font-size:0.85rem">No sales today</p>';
 
-  async function saveSettings() {
-    const res = await fetch('/api/settings', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        restaurantName: document.getElementById('settingName').value,
-        currency: document.getElementById('settingCurrency').value,
-        wifiName: document.getElementById('settingWifi').value
-      })
-    });
-    const data = await res.json();
-    if (data.success) { showToast('Settings saved!'); fetchData(); }
-    else showToast('Failed to save', 'error');
-  }
+  document.getElementById('tableWise').innerHTML = data.tableWise.length ? data.tableWise.map(t=>`
+    <div class="top-item"><span>Table ${t.tableNumber} — ${t.orderCount} order(s)</span><strong>${cur}${t.total}</strong></div>
+  `).join('') : '<p style="color:var(--muted);font-size:0.85rem">No active orders</p>';
+}
 
-  function openAddModal() {
-    document.getElementById('menuModal').classList.add('active');
-    document.getElementById('modalTitle').textContent = 'Add Menu Item';
-    document.querySelector('#menuModal form').reset();
-  }
+// ── BILL PANEL ────────────────────────────────────────────────────────────────
+function renderTables() {
+  const grid = document.getElementById('tablesGrid');
+  grid.innerHTML = allTables.map(t=>`
+    <div class="table-tile ${t.status==='occupied'?'occupied':'available'}" onclick="${t.status==='occupied'?`openBill(${t.table_number})`:``}">
+      <div class="tt-num">T${t.table_number}</div>
+      <div class="tt-status ${t.status==='occupied'?'occ':'avail'}">${t.status==='occupied'?'● Occupied':'Available'}</div>
+    </div>
+  `).join('');
+}
 
-  function closeModal() { document.getElementById('menuModal').classList.remove('active'); }
+async function openBill(tableNumber) {
+  const res = await fetch(`/api/bill/table/${tableNumber}`);
+  const bill = await res.json();
+  const cur = bill.currency || '₹';
+  const taxes = Math.round(bill.grandTotal * 0.05);
+  const payable = bill.grandTotal + taxes;
 
-  async function saveMenuItem(e) {
-    e.preventDefault();
-    const res = await fetch('/api/menu', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: document.getElementById('itemName').value,
-        category: document.getElementById('itemCategory').value,
-        price: parseInt(document.getElementById('itemPrice').value),
-        description: document.getElementById('itemDesc').value,
-        image: document.getElementById('itemImage').value,
-        veg: document.getElementById('itemVeg').value === 'true'
-      })
-    });
-    if (res.ok) { closeModal(); fetchData(); showToast('Item added!'); }
-    else showToast('Failed to add item', 'error');
-  }
+  document.getElementById('billBox').innerHTML = `
+    <div class="bill-head">
+      ${cfg.logo ? `<img src="${cfg.logo}" style="height:50px;margin-bottom:10px;border-radius:8px">` : ''}
+      <h2>${bill.restaurantName}</h2>
+      <p>Table ${bill.tableNumber} &middot; ${bill.generatedAt}</p>
+    </div>
+    <table style="width:100%;margin-bottom:10px">
+      <tr style="font-weight:700;border-bottom:1px solid var(--border)"><th style="padding:8px 0">Item</th><th style="padding:8px 0;text-align:center">Qty</th><th style="padding:8px 0;text-align:right">Amount</th></tr>
+      ${bill.items.map(i=>`
+        <tr>
+          <td style="padding:10px 0">${i.item_name}</td>
+          <td style="text-align:center;padding:10px 0">${i.quantity}</td>
+          <td style="text-align:right;padding:10px 0">${cur}${i.price * i.quantity}</td>
+        </tr>
+      `).join('')}
+    </table>
+    <div style="border-top:1px solid var(--border);padding-top:10px">
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:0.88rem;color:var(--muted)"><span>Subtotal</span><span>${cur}${bill.grandTotal}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:0.88rem;color:var(--muted)"><span>Taxes (5%)</span><span>${cur}${taxes}</span></div>
+    </div>
+    <div class="bill-total"><span>Total Payable</span><span>${cur}${payable}</span></div>
+    <div class="bill-actions">
+      <button class="btn btn-print" onclick="printBill()">🖨️ Print Bill</button>
+      <button class="btn btn-green" onclick="clearTable(${tableNumber})">✓ Mark Paid & Clear Table</button>
+    </div>
+  `;
+  document.getElementById('billTableView').style.display = 'none';
+  document.getElementById('billDetail').style.display = 'block';
+}
 
-  async function deleteItem(id) {
-    if (!confirm('Delete this item?')) return;
-    const res = await fetch(`/api/menu/${id}`, { method: 'DELETE' });
-    if (res.ok) { fetchData(); showToast('Item deleted!'); }
-    else showToast('Failed to delete', 'error');
-  }
+function closeBillDetail() {
+  document.getElementById('billDetail').style.display = 'none';
+  document.getElementById('billTableView').style.display = 'block';
+  fetchData().then(renderTables);
+}
 
-  // Socket listeners
-  socket.on('admin-data', (data) => {
-    menu = data.menu; orders = data.orders; orderHistory = data.orderHistory || [];
-    renderMenu(); renderLiveOrders(); renderHistory();
+function printBill() { window.print(); }
+
+async function clearTable(tableNumber) {
+  if (!confirm(`Mark Table ${tableNumber} as paid and clear all orders?`)) return;
+  const res = await fetch(`/api/bill/table/${tableNumber}/complete`, { method:'POST' });
+  const data = await res.json();
+  if (data.success) { toast('Table cleared!'); closeBillDetail(); fetchData(); }
+  else toast('Error clearing table', 'err');
+}
+
+// ── MENU CRUD ─────────────────────────────────────────────────────────────────
+function openAddModal() { document.getElementById('menuModal').classList.add('active'); document.querySelector('#menuModal form').reset(); }
+function closeModal() { document.getElementById('menuModal').classList.remove('active'); }
+
+async function saveItem(e) {
+  e.preventDefault();
+  const res = await fetch('/api/menu', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name:document.getElementById('iName').value, category:document.getElementById('iCat').value, price:parseInt(document.getElementById('iPrice').value), description:document.getElementById('iDesc').value, image:document.getElementById('iImg').value, veg:document.getElementById('iVeg').value==='true' })
   });
+  if (res.ok) { closeModal(); fetchData(); toast('Item added!'); }
+  else toast('Failed to add item','err');
+}
 
-  socket.on('new-order', () => { fetchData(); showToast('New order received! 🔔'); });
-  socket.on('order-status-update', () => fetchData());
+async function deleteItem(id) {
+  if (!confirm('Delete this item?')) return;
+  const res = await fetch(`/api/menu/${id}`, {method:'DELETE'});
+  if (res.ok) { fetchData(); toast('Item deleted!'); }
+  else toast('Failed','err');
+}
 
-  // Init
-  fetchData();
-  loadSettings().then(() => {
-    const n = document.getElementById('settingName');
-    if (n.value) document.getElementById('restaurantNameSub').textContent = n.value;
-  });
+async function loadQR() {
+  document.getElementById('qrGrid').innerHTML = '<p style="padding:30px;color:var(--muted)">Generating...</p>';
+  const res = await fetch('/api/qr/generate/all');
+  const codes = await res.json();
+  document.getElementById('qrGrid').innerHTML = codes.map(q=>`
+    <div class="qr-card"><div class="q-num">Table ${q.tableNumber}</div><img src="${q.qrCode}" alt="QR"><div class="qr-url">${q.url}</div></div>
+  `).join('');
+}
+
+// ── SOCKET ────────────────────────────────────────────────────────────────────
+socket.on('admin-data', data => { menu=data.menu; orders=data.orders; orderHistory=data.orderHistory||[]; renderMenu(); renderLive(); renderHistory(); });
+socket.on('new-order', () => { fetchData(); toast('New order received! 🔔'); });
+socket.on('order-status-update', () => fetchData());
+socket.on('orders-update', updated => { orders=updated; renderLive(); document.getElementById('activeBadge').textContent = orders.length + ' active order' + (orders.length!==1?'s':''); });
+
+fetchData();
 </script>
 </body>
 </html>
