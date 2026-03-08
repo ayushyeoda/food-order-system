@@ -5,432 +5,288 @@ const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const path = require('path');
+const Database = require('better-sqlite3');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+const io = socketIo(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// In-Memory Database (For production, use MongoDB/PostgreSQL)
-let database = {
-  tables: [],
-  menu: [],
-  orders: [],
-  orderHistory: [],
-  settings: {
-    restaurantName: "My Restaurant",
-    currency: "₹"
-  }
-};
+// ─── DATABASE SETUP ───────────────────────────────────────────────────────────
+const db = new Database('restaurant.db');
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
-// Initialize default data
-function initializeDefaultData() {
-  // Create 15 tables
+function initDatabase() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      restaurant_name TEXT DEFAULT 'My Restaurant',
+      currency TEXT DEFAULT '₹',
+      wifi_name TEXT DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS tables (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      table_number INTEGER UNIQUE NOT NULL,
+      status TEXT DEFAULT 'available'
+    );
+    CREATE TABLE IF NOT EXISTS menu_items (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      price REAL NOT NULL,
+      veg INTEGER DEFAULT 1,
+      available INTEGER DEFAULT 1,
+      image TEXT,
+      description TEXT
+    );
+    CREATE TABLE IF NOT EXISTS orders (
+      id TEXT PRIMARY KEY,
+      order_number INTEGER NOT NULL,
+      table_number INTEGER NOT NULL,
+      total REAL NOT NULL,
+      status TEXT DEFAULT 'pending',
+      is_urgent INTEGER DEFAULT 0,
+      timestamp TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id TEXT NOT NULL,
+      item_id TEXT,
+      item_name TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      price REAL NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(id)
+    );
+    CREATE TABLE IF NOT EXISTS order_history (
+      id TEXT PRIMARY KEY,
+      order_number INTEGER NOT NULL,
+      table_number INTEGER NOT NULL,
+      total REAL NOT NULL,
+      timestamp TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      completed_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS order_history_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id TEXT NOT NULL,
+      item_name TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      price REAL NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES order_history(id)
+    );
+  `);
+
+  const settingsExists = db.prepare('SELECT id FROM settings WHERE id = 1').get();
+  if (!settingsExists) {
+    db.prepare('INSERT INTO settings (id, restaurant_name, currency, wifi_name) VALUES (1, ?, ?, ?)').run('My Restaurant', '₹', '');
+  }
+
   for (let i = 1; i <= 15; i++) {
-    database.tables.push({
-      id: i,
-      tableNumber: i,
-      qrCode: `TABLE-${i}`,
-      status: 'available' // available, occupied
-    });
+    db.prepare('INSERT OR IGNORE INTO tables (table_number, status) VALUES (?, ?)').run(i, 'available');
   }
 
-  // Default Menu with Images
-  database.menu = [
-    // Starters
-    { id: uuidv4(), name: 'Paneer Tikka', category: 'Starters', price: 180, veg: true, available: true, image: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400', description: 'Grilled cottage cheese marinated in spices' },
-    { id: uuidv4(), name: 'Chicken Tikka', category: 'Starters', price: 220, veg: false, available: true, image: 'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400', description: 'Tender chicken pieces marinated and grilled' },
-    { id: uuidv4(), name: 'Veg Spring Roll', category: 'Starters', price: 140, veg: true, available: true, image: 'https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=400', description: 'Crispy rolls filled with fresh vegetables' },
-    { id: uuidv4(), name: 'Chicken Wings', category: 'Starters', price: 200, veg: false, available: true, image: 'https://images.unsplash.com/photo-1608039755401-742074f0548d?w=400', description: 'Spicy and juicy chicken wings' },
-    
-    // Main Course
-    { id: uuidv4(), name: 'Butter Chicken', category: 'Main Course', price: 280, veg: false, available: true, image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=400', description: 'Creamy tomato-based chicken curry' },
-    { id: uuidv4(), name: 'Dal Makhani', category: 'Main Course', price: 180, veg: true, available: true, image: 'https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=400', description: 'Rich and creamy black lentil curry' },
-    { id: uuidv4(), name: 'Paneer Butter Masala', category: 'Main Course', price: 240, veg: true, available: true, image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400', description: 'Cottage cheese in rich tomato gravy' },
-    { id: uuidv4(), name: 'Chicken Curry', category: 'Main Course', price: 260, veg: false, available: true, image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400', description: 'Traditional chicken curry with spices' },
-    { id: uuidv4(), name: 'Veg Biryani', category: 'Main Course', price: 220, veg: true, available: true, image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400', description: 'Fragrant rice with mixed vegetables' },
-    { id: uuidv4(), name: 'Chicken Biryani', category: 'Main Course', price: 280, veg: false, available: true, image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400', description: 'Aromatic rice with tender chicken' },
-    
-    // Breads
-    { id: uuidv4(), name: 'Tandoori Roti', category: 'Breads', price: 20, veg: true, available: true, image: 'https://images.unsplash.com/photo-1619466234386-daea30c4c728?w=400', description: 'Traditional clay oven baked bread' },
-    { id: uuidv4(), name: 'Butter Naan', category: 'Breads', price: 35, veg: true, available: true, image: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=400', description: 'Soft flatbread with butter' },
-    { id: uuidv4(), name: 'Garlic Naan', category: 'Breads', price: 45, veg: true, available: true, image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400', description: 'Naan topped with garlic and herbs' },
-    { id: uuidv4(), name: 'Missi Roti', category: 'Breads', price: 30, veg: true, available: true, image: 'https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=400', description: 'Spiced gram flour flatbread' },
-    
-    // Rice
-    { id: uuidv4(), name: 'Jeera Rice', category: 'Rice', price: 120, veg: true, available: true, image: 'https://images.unsplash.com/photo-1596560548464-f010549b84d7?w=400', description: 'Fragrant basmati rice with cumin' },
-    { id: uuidv4(), name: 'Plain Rice', category: 'Rice', price: 80, veg: true, available: true, image: 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400', description: 'Steamed basmati rice' },
-    
-    // Beverages
-    { id: uuidv4(), name: 'Sweet Lassi', category: 'Beverages', price: 60, veg: true, available: true, image: 'https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?w=400', description: 'Sweet yogurt-based drink' },
-    { id: uuidv4(), name: 'Salted Lassi', category: 'Beverages', price: 60, veg: true, available: true, image: 'https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?w=400', description: 'Refreshing salted yogurt drink' },
-    { id: uuidv4(), name: 'Cold Drink', category: 'Beverages', price: 40, veg: true, available: true, image: 'https://images.unsplash.com/photo-1581006852262-e4307cf6283a?w=400', description: 'Chilled soft drink' },
-    { id: uuidv4(), name: 'Mineral Water', category: 'Beverages', price: 20, veg: true, available: true, image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400', description: 'Purified bottled water' },
-    
-    // Desserts
-    { id: uuidv4(), name: 'Gulab Jamun', category: 'Desserts', price: 80, veg: true, available: true, image: 'https://images.unsplash.com/photo-1589647363585-f4a7d3877b10?w=400', description: 'Sweet milk balls in sugar syrup' },
-    { id: uuidv4(), name: 'Ice Cream', category: 'Desserts', price: 90, veg: true, available: true, image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400', description: 'Assorted flavors' },
-    { id: uuidv4(), name: 'Rasgulla', category: 'Desserts', price: 70, veg: true, available: true, image: 'https://images.unsplash.com/photo-1645177628172-a94c1f96e6db?w=400', description: 'Soft cottage cheese balls in syrup' }
-  ];
+  const menuCount = db.prepare('SELECT COUNT(*) as count FROM menu_items').get();
+  if (menuCount.count === 0) {
+    const ins = db.prepare('INSERT INTO menu_items (id,name,category,price,veg,available,image,description) VALUES (?,?,?,?,?,1,?,?)');
+    [
+      [uuidv4(),'Paneer Tikka','Starters',180,1,'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400','Grilled cottage cheese marinated in spices'],
+      [uuidv4(),'Chicken Tikka','Starters',220,0,'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400','Tender chicken pieces marinated and grilled'],
+      [uuidv4(),'Veg Spring Roll','Starters',140,1,'https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=400','Crispy rolls filled with fresh vegetables'],
+      [uuidv4(),'Chicken Wings','Starters',200,0,'https://images.unsplash.com/photo-1608039755401-742074f0548d?w=400','Spicy and juicy chicken wings'],
+      [uuidv4(),'Butter Chicken','Main Course',280,0,'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=400','Creamy tomato-based chicken curry'],
+      [uuidv4(),'Dal Makhani','Main Course',180,1,'https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=400','Rich and creamy black lentil curry'],
+      [uuidv4(),'Paneer Butter Masala','Main Course',240,1,'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400','Cottage cheese in rich tomato gravy'],
+      [uuidv4(),'Chicken Curry','Main Course',260,0,'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400','Traditional chicken curry with spices'],
+      [uuidv4(),'Veg Biryani','Main Course',220,1,'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400','Fragrant rice with mixed vegetables'],
+      [uuidv4(),'Chicken Biryani','Main Course',280,0,'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400','Aromatic rice with tender chicken'],
+      [uuidv4(),'Tandoori Roti','Breads',20,1,'https://images.unsplash.com/photo-1619466234386-daea30c4c728?w=400','Traditional clay oven baked bread'],
+      [uuidv4(),'Butter Naan','Breads',35,1,'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=400','Soft flatbread with butter'],
+      [uuidv4(),'Garlic Naan','Breads',45,1,'https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400','Naan topped with garlic and herbs'],
+      [uuidv4(),'Jeera Rice','Rice',120,1,'https://images.unsplash.com/photo-1596560548464-f010549b84d7?w=400','Fragrant basmati rice with cumin'],
+      [uuidv4(),'Plain Rice','Rice',80,1,'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400','Steamed basmati rice'],
+      [uuidv4(),'Sweet Lassi','Beverages',60,1,'https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?w=400','Sweet yogurt-based drink'],
+      [uuidv4(),'Cold Drink','Beverages',40,1,'https://images.unsplash.com/photo-1581006852262-e4307cf6283a?w=400','Chilled soft drink'],
+      [uuidv4(),'Mineral Water','Beverages',20,1,'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400','Purified bottled water'],
+      [uuidv4(),'Gulab Jamun','Desserts',80,1,'https://images.unsplash.com/photo-1589647363585-f4a7d3877b10?w=400','Sweet milk balls in sugar syrup'],
+      [uuidv4(),'Ice Cream','Desserts',90,1,'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400','Assorted flavors'],
+    ].forEach(item => ins.run(...item));
+  }
+  console.log('✅ Database initialized');
 }
 
-initializeDefaultData();
+initDatabase();
 
-// ==================== SOCKET.IO CONNECTION ====================
+function getNextOrderNumber() {
+  const a = db.prepare('SELECT COUNT(*) as count FROM orders').get();
+  const h = db.prepare('SELECT COUNT(*) as count FROM order_history').get();
+  return a.count + h.count + 1;
+}
+
+function normalizeMenuItem(item) {
+  return { ...item, veg: item.veg === 1, available: item.available === 1 };
+}
+
+function getActiveOrdersWithItems() {
+  return db.prepare('SELECT * FROM orders ORDER BY is_urgent DESC, timestamp ASC').all().map(order => {
+    const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id);
+    return { ...order, isUrgent: order.is_urgent === 1, orderNumber: order.order_number, tableNumber: order.table_number, createdAt: order.created_at, items: items.map(i => ({ ...i, id: i.item_id, name: i.item_name })) };
+  });
+}
+
+function getOrderHistory() {
+  return db.prepare('SELECT * FROM order_history ORDER BY completed_at DESC').all().map(order => {
+    const items = db.prepare('SELECT * FROM order_history_items WHERE order_id = ?').all(order.id);
+    return { ...order, isUrgent: false, orderNumber: order.order_number, tableNumber: order.table_number, createdAt: order.created_at, completedAt: order.completed_at, items: items.map(i => ({ name: i.item_name, quantity: i.quantity, price: i.price })) };
+  });
+}
+
+// ─── SOCKET.IO ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
-  console.log('New client connected:', socket.id);
-
-  // Send initial data to kitchen/admin when they connect
   socket.on('join-kitchen', () => {
     socket.join('kitchen');
-    socket.emit('orders-update', database.orders);
+    socket.emit('orders-update', getActiveOrdersWithItems());
   });
-
   socket.on('join-admin', () => {
     socket.join('admin');
-    socket.emit('admin-data', {
-      orders: database.orders,
-      orderHistory: database.orderHistory,
-      menu: database.menu,
-      tables: database.tables
-    });
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    socket.emit('admin-data', { orders: getActiveOrdersWithItems(), orderHistory: getOrderHistory(), menu: db.prepare('SELECT * FROM menu_items ORDER BY category, name').all().map(normalizeMenuItem), tables: db.prepare('SELECT * FROM tables ORDER BY table_number').all() });
   });
 });
 
-// ==================== API ENDPOINTS ====================
-
-// Get all tables
-app.get('/api/tables', (req, res) => {
-  res.json(database.tables);
-});
-
-// Get specific table info
+// ─── API: TABLES ─────────────────────────────────────────────────────────────
+app.get('/api/tables', (req, res) => res.json(db.prepare('SELECT * FROM tables ORDER BY table_number').all()));
 app.get('/api/table/:tableNumber', (req, res) => {
-  const tableNumber = parseInt(req.params.tableNumber);
-  const table = database.tables.find(t => t.tableNumber === tableNumber);
-  
-  if (!table) {
-    return res.status(404).json({ error: 'Table not found' });
-  }
-  
-  res.json(table);
+  const table = db.prepare('SELECT * FROM tables WHERE table_number = ?').get(parseInt(req.params.tableNumber));
+  table ? res.json(table) : res.status(404).json({ error: 'Table not found' });
 });
 
-// Get menu
-app.get('/api/menu', (req, res) => {
-  res.json(database.menu.filter(item => item.available));
+// ─── API: MENU ────────────────────────────────────────────────────────────────
+app.get('/api/menu', (req, res) => res.json(db.prepare('SELECT * FROM menu_items WHERE available = 1 ORDER BY category, name').all().map(normalizeMenuItem)));
+app.get('/api/menu/category/:category', (req, res) => res.json(db.prepare('SELECT * FROM menu_items WHERE category = ? AND available = 1').all(req.params.category).map(normalizeMenuItem)));
+
+app.post('/api/menu', (req, res) => {
+  try {
+    const { name, category, price, veg, description, image } = req.body;
+    const id = uuidv4();
+    db.prepare('INSERT INTO menu_items (id,name,category,price,veg,available,image,description) VALUES (?,?,?,?,?,1,?,?)').run(id, name, category, price, veg ? 1 : 0, image || '', description || '');
+    io.emit('menu-update', db.prepare('SELECT * FROM menu_items').all().map(normalizeMenuItem));
+    res.status(201).json({ success: true, item: normalizeMenuItem(db.prepare('SELECT * FROM menu_items WHERE id = ?').get(id)) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Get menu by category
-app.get('/api/menu/category/:category', (req, res) => {
-  const items = database.menu.filter(item => 
-    item.category === req.params.category && item.available
-  );
-  res.json(items);
+app.put('/api/menu/:itemId', (req, res) => {
+  try {
+    const { name, category, price, veg, description, image, available } = req.body;
+    db.prepare('UPDATE menu_items SET name=?,category=?,price=?,veg=?,description=?,image=?,available=? WHERE id=?').run(name, category, price, veg ? 1 : 0, description || '', image || '', available !== undefined ? (available ? 1 : 0) : 1, req.params.itemId);
+    io.emit('menu-update', db.prepare('SELECT * FROM menu_items').all().map(normalizeMenuItem));
+    res.json({ success: true, item: normalizeMenuItem(db.prepare('SELECT * FROM menu_items WHERE id = ?').get(req.params.itemId)) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Place Order
+app.delete('/api/menu/:itemId', (req, res) => {
+  try {
+    db.prepare('DELETE FROM menu_items WHERE id = ?').run(req.params.itemId);
+    io.emit('menu-update', db.prepare('SELECT * FROM menu_items').all().map(normalizeMenuItem));
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── API: ORDERS ──────────────────────────────────────────────────────────────
 app.post('/api/order', (req, res) => {
-  const { tableNumber, items, isUrgent } = req.body;
-  
-  if (!tableNumber || !items || items.length === 0) {
-    return res.status(400).json({ error: 'Invalid order data' });
-  }
-
-  // Calculate total
-  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  // Check if table has ACTIVE orders (not completed)
-  const activeOrdersForTable = database.orders.filter(o => 
-    o.tableNumber === tableNumber && 
-    o.status !== 'completed'
-  );
-  
-  // Mark as urgent if table already has active orders
-  const shouldBeUrgent = activeOrdersForTable.length > 0;
-
-  const newOrder = {
-    id: uuidv4(),
-    orderNumber: database.orders.length + database.orderHistory.length + 1,
-    tableNumber: tableNumber,
-    items: items,
-    total: total,
-    status: 'pending', // pending, preparing, ready, completed
-    isUrgent: shouldBeUrgent,
-    timestamp: new Date().toISOString(),
-    createdAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
-  };
-
-  database.orders.push(newOrder);
-
-  // Update table status
-  const table = database.tables.find(t => t.tableNumber === tableNumber);
-  if (table) {
-    table.status = 'occupied';
-  }
-
-  // Emit to kitchen in real-time
-  io.to('kitchen').emit('new-order', newOrder);
-  io.to('admin').emit('new-order', newOrder);
-
-  res.status(201).json({
-    success: true,
-    order: newOrder,
-    message: shouldBeUrgent ? 'Urgent order placed! Customer is already eating.' : 'Order placed successfully!'
-  });
+  try {
+    const { tableNumber, items } = req.body;
+    if (!tableNumber || !items || !items.length) return res.status(400).json({ error: 'Invalid order data' });
+    const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+    const activeCount = db.prepare("SELECT COUNT(*) as count FROM orders WHERE table_number = ? AND status != 'completed'").get(tableNumber).count;
+    const isUrgent = activeCount > 0 ? 1 : 0;
+    const now = new Date();
+    const orderId = uuidv4();
+    const orderNumber = getNextOrderNumber();
+    db.prepare('INSERT INTO orders (id,order_number,table_number,total,status,is_urgent,timestamp,created_at) VALUES (?,?,?,?,?,?,?,?)').run(orderId, orderNumber, tableNumber, total, 'pending', isUrgent, now.toISOString(), now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+    items.forEach(item => db.prepare('INSERT INTO order_items (order_id,item_id,item_name,quantity,price) VALUES (?,?,?,?,?)').run(orderId, item.id, item.name, item.quantity, item.price));
+    db.prepare("UPDATE tables SET status='occupied' WHERE table_number=?").run(tableNumber);
+    const newOrder = { id: orderId, orderNumber, tableNumber, total, status: 'pending', isUrgent: isUrgent === 1, timestamp: now.toISOString(), createdAt: now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }), items };
+    io.to('kitchen').emit('new-order', newOrder);
+    io.to('admin').emit('new-order', newOrder);
+    res.status(201).json({ success: true, order: newOrder, message: isUrgent ? 'Urgent order placed!' : 'Order placed successfully!' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Get all orders (for kitchen)
-app.get('/api/orders', (req, res) => {
-  res.json(database.orders);
-});
-
-// Get orders by table
+app.get('/api/orders', (req, res) => res.json(getActiveOrdersWithItems()));
+app.get('/api/orders/history', (req, res) => res.json(getOrderHistory()));
 app.get('/api/orders/table/:tableNumber', (req, res) => {
-  const tableNumber = parseInt(req.params.tableNumber);
-  const orders = database.orders.filter(o => o.tableNumber === tableNumber);
-  res.json(orders);
+  const orders = db.prepare('SELECT * FROM orders WHERE table_number = ?').all(parseInt(req.params.tableNumber));
+  res.json(orders.map(o => ({ ...o, isUrgent: o.is_urgent === 1, items: db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(o.id) })));
 });
 
-// Update order status
 app.put('/api/order/:orderId/status', (req, res) => {
-  const { orderId } = req.params;
-  const { status } = req.body;
-
-  const order = database.orders.find(o => o.id === orderId);
-  
-  if (!order) {
-    return res.status(404).json({ error: 'Order not found' });
-  }
-
-  order.status = status;
-
-  // If completed, move to history
-  if (status === 'completed') {
-    database.orderHistory.push({
-      ...order,
-      completedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
-    });
-    database.orders = database.orders.filter(o => o.id !== orderId);
-  }
-
-  // Emit update to all clients
-  io.to('kitchen').emit('order-status-update', { orderId, status });
-  io.to('admin').emit('order-status-update', { orderId, status });
-
-  res.json({
-    success: true,
-    order: order
-  });
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (status === 'completed') {
+      const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(orderId);
+      const completedAt = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+      db.prepare('INSERT INTO order_history (id,order_number,table_number,total,timestamp,created_at,completed_at) VALUES (?,?,?,?,?,?,?)').run(order.id, order.order_number, order.table_number, order.total, order.timestamp, order.created_at, completedAt);
+      items.forEach(i => db.prepare('INSERT INTO order_history_items (order_id,item_name,quantity,price) VALUES (?,?,?,?)').run(orderId, i.item_name, i.quantity, i.price));
+      db.prepare('DELETE FROM order_items WHERE order_id = ?').run(orderId);
+      db.prepare('DELETE FROM orders WHERE id = ?').run(orderId);
+      if (db.prepare('SELECT COUNT(*) as count FROM orders WHERE table_number = ?').get(order.table_number).count === 0) db.prepare("UPDATE tables SET status='available' WHERE table_number=?").run(order.table_number);
+    } else {
+      db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, orderId);
+    }
+    io.to('kitchen').emit('order-status-update', { orderId, status });
+    io.to('admin').emit('order-status-update', { orderId, status });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Get order history
-app.get('/api/orders/history', (req, res) => {
-  res.json(database.orderHistory);
-});
-
-// Get today's sales report
+// ─── API: REPORTS ─────────────────────────────────────────────────────────────
 app.get('/api/reports/today', (req, res) => {
   const today = new Date().toLocaleDateString('en-IN');
-  
-  const todayOrders = database.orderHistory.filter(order => {
-    const orderDate = new Date(order.timestamp).toLocaleDateString('en-IN');
-    return orderDate === today;
-  });
-
-  const totalSales = todayOrders.reduce((sum, order) => sum + order.total, 0);
-  const totalOrders = todayOrders.length;
-
-  res.json({
-    date: today,
-    totalOrders,
-    totalSales,
-    orders: todayOrders
-  });
+  const history = getOrderHistory();
+  const todayOrders = history.filter(o => new Date(o.timestamp).toLocaleDateString('en-IN') === today);
+  res.json({ date: today, totalOrders: todayOrders.length, totalSales: todayOrders.reduce((s, o) => s + o.total, 0), orders: todayOrders });
 });
 
-// ==================== MENU MANAGEMENT ====================
-
-// Add menu item
-app.post('/api/menu', (req, res) => {
-  const { name, category, price, veg } = req.body;
-  
-  const newItem = {
-    id: uuidv4(),
-    name,
-    category,
-    price,
-    veg,
-    available: true
-  };
-
-  database.menu.push(newItem);
-  
-  // Notify all clients
-  io.emit('menu-update', database.menu);
-  
-  res.status(201).json({ success: true, item: newItem });
+// ─── API: QR CODES ────────────────────────────────────────────────────────────
+app.get('/api/qr/:tableNumber', async (req, res) => {
+  const url = `${req.protocol}://${req.get('host')}/order?table=${req.params.tableNumber}`;
+  res.json({ tableNumber: req.params.tableNumber, qrCode: await QRCode.toDataURL(url, { width: 300, margin: 2 }), url });
 });
 
-// Update menu item
-app.put('/api/menu/:itemId', (req, res) => {
-  const { itemId } = req.params;
-  const updates = req.body;
-
-  const itemIndex = database.menu.findIndex(item => item.id === itemId);
-  
-  if (itemIndex === -1) {
-    return res.status(404).json({ error: 'Item not found' });
-  }
-
-  database.menu[itemIndex] = { ...database.menu[itemIndex], ...updates };
-  
-  io.emit('menu-update', database.menu);
-  
-  res.json({ success: true, item: database.menu[itemIndex] });
+app.get('/api/qr/generate/all', async (req, res) => {
+  const tables = db.prepare('SELECT * FROM tables ORDER BY table_number').all();
+  const qrCodes = await Promise.all(tables.map(async t => {
+    const url = `${req.protocol}://${req.get('host')}/order?table=${t.table_number}`;
+    return { tableNumber: t.table_number, qrCode: await QRCode.toDataURL(url, { width: 300, margin: 2 }), url };
+  }));
+  res.json(qrCodes);
 });
 
-// Delete menu item
-app.delete('/api/menu/:itemId', (req, res) => {
-  const { itemId } = req.params;
-  
-  database.menu = database.menu.filter(item => item.id !== itemId);
-  
-  io.emit('menu-update', database.menu);
-  
+// ─── API: SETTINGS ────────────────────────────────────────────────────────────
+app.get('/api/settings', (req, res) => {
+  const s = db.prepare('SELECT * FROM settings WHERE id = 1').get();
+  res.json({ restaurantName: s.restaurant_name, currency: s.currency, wifiName: s.wifi_name });
+});
+
+app.put('/api/settings', (req, res) => {
+  const { restaurantName, currency, wifiName } = req.body;
+  db.prepare('UPDATE settings SET restaurant_name=?,currency=?,wifi_name=? WHERE id=1').run(restaurantName || 'My Restaurant', currency || '₹', wifiName || '');
   res.json({ success: true });
 });
 
-// ==================== QR CODE GENERATION ====================
-
-// Generate QR code for a table
-app.get('/api/qr/:tableNumber', async (req, res) => {
-  const tableNumber = parseInt(req.params.tableNumber);
-  const table = database.tables.find(t => t.tableNumber === tableNumber);
-  
-  if (!table) {
-    return res.status(404).json({ error: 'Table not found' });
-  }
-
-  try {
-    // Generate URL that customer will scan
-    const orderUrl = `${req.protocol}://${req.get('host')}/order?table=${tableNumber}`;
-    
-    // Generate QR code as data URL
-    const qrCodeDataUrl = await QRCode.toDataURL(orderUrl, {
-      width: 300,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      }
-    });
-
-    res.json({
-      tableNumber,
-      qrCode: qrCodeDataUrl,
-      url: orderUrl
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to generate QR code' });
-  }
-});
-
-// Generate all QR codes (for printing)
-app.get('/api/qr/generate/all', async (req, res) => {
-  try {
-    const qrCodes = await Promise.all(
-      database.tables.map(async (table) => {
-        const orderUrl = `${req.protocol}://${req.get('host')}/order?table=${table.tableNumber}`;
-        const qrCodeDataUrl = await QRCode.toDataURL(orderUrl, {
-          width: 300,
-          margin: 2
-        });
-        
-        return {
-          tableNumber: table.tableNumber,
-          qrCode: qrCodeDataUrl,
-          url: orderUrl
-        };
-      })
-    );
-
-    res.json(qrCodes);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to generate QR codes' });
-  }
-});
-
-// ==================== SETTINGS ====================
-
-// Get settings
-app.get('/api/settings', (req, res) => {
-  res.json(database.settings);
-});
-
-// Update settings
-app.put('/api/settings', (req, res) => {
-  database.settings = { ...database.settings, ...req.body };
-  res.json({ success: true, settings: database.settings });
-});
-
-// ==================== SERVE FRONTEND ====================
-
-// Customer order page
-app.get('/order', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'customer.html'));
-});
-
-// Kitchen display page
-app.get('/kitchen', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'kitchen.html'));
-});
-
-// Admin dashboard page
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-// Root page - Show options
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// ==================== START SERVER ====================
+// ─── PAGES ────────────────────────────────────────────────────────────────────
+app.get('/order', (req, res) => res.sendFile(path.join(__dirname, 'public', 'customer.html')));
+app.get('/kitchen', (req, res) => res.sendFile(path.join(__dirname, 'public', 'kitchen.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════════════════════╗
-║   🍽️  RESTAURANT ORDERING SYSTEM STARTED 🍽️            ║
-╠════════════════════════════════════════════════════════╣
-║                                                        ║
-║   Server running on: http://localhost:${PORT}            ║
-║                                                        ║
-║   Access Points:                                       ║
-║   • Customer Order: http://localhost:${PORT}/order       ║
-║   • Kitchen Display: http://localhost:${PORT}/kitchen    ║
-║   • Admin Panel: http://localhost:${PORT}/admin          ║
-║                                                        ║
-║   Total Tables: ${database.tables.length}                                      ║
-║   Menu Items: ${database.menu.length}                                       ║
-║                                                        ║
-╚════════════════════════════════════════════════════════╝
-  `);
-});
-
+server.listen(PORT, () => console.log(`🍽️  Server running on http://localhost:${PORT}`));
 module.exports = { app, server };
