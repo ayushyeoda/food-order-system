@@ -1,460 +1,317 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kitchen Display - SmartOrder</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kitchen Display</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d14;
+    --surface: #16161f;
+    --surface2: #1e1e2a;
+    --border: rgba(255,255,255,0.07);
+    --primary: #ff6b35;
+    --amber: #ffb347;
+    --green: #3ecf8e;
+    --blue: #4f8ef7;
+    --red: #ff4757;
+    --text: #f0f0f5;
+    --muted: rgba(240,240,245,0.45);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a2e;
-            color: white;
-        }
+  /* TOPBAR */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top:0; z-index:100;
+  }
+  .topbar-left { display:flex; align-items:center; gap:14px; }
+  .topbar-left h1 { font-size:1.2rem; font-weight:700; letter-spacing:-0.3px; }
+  .live-pill { background: rgba(62,207,142,0.15); color:var(--green); font-size:0.7rem; font-weight:700; padding:3px 10px; border-radius:20px; display:flex; align-items:center; gap:5px; }
+  .live-dot { width:7px; height:7px; background:var(--green); border-radius:50%; animation:blink 1.4s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .clock { font-size:0.85rem; color:var(--muted); font-weight:500; }
 
-        .header {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
+  /* STATS BAR */
+  .stats-bar {
+    display:flex; gap:1px; background:var(--border);
+    border-bottom:1px solid var(--border);
+  }
+  .stat { flex:1; background:var(--surface); padding:14px 24px; display:flex; flex-direction:column; gap:2px; }
+  .stat-num { font-size:2rem; font-weight:800; line-height:1; }
+  .stat-num.orange { color:var(--primary); }
+  .stat-num.amber { color:var(--amber); }
+  .stat-num.green { color:var(--green); }
+  .stat-num.red { color:var(--red); }
+  .stat-label { font-size:0.72rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.8px; }
 
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+  /* ORDERS GRID */
+  .orders-wrap { padding:20px 24px; }
+  .orders-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
 
-        .stats {
-            display: flex;
-            gap: 30px;
-        }
+  /* ORDER CARD */
+  .order-card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    transition:transform 0.2s;
+    animation:fadeUp 0.35s ease;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .order-card:hover { transform:translateY(-2px); }
 
-        .stat-box {
-            background: rgba(255,255,255,0.2);
-            padding: 10px 20px;
-            border-radius: 10px;
-        }
+  .order-card.urgent {
+    border-color: rgba(255,71,87,0.5);
+    box-shadow: 0 0 0 1px rgba(255,71,87,0.3), 0 8px 30px rgba(255,71,87,0.15);
+    animation: fadeUp 0.35s ease, urgentGlow 2.5s infinite;
+  }
+  @keyframes urgentGlow {
+    0%,100%{ box-shadow:0 0 0 1px rgba(255,71,87,0.3),0 8px 30px rgba(255,71,87,0.15); }
+    50%{ box-shadow:0 0 0 1px rgba(255,71,87,0.6),0 8px 40px rgba(255,71,87,0.35); }
+  }
 
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-        }
+  /* CARD HEADER */
+  .card-top {
+    padding:16px 20px;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    border-bottom:1px solid var(--border);
+  }
+  .card-top.status-pending { background:rgba(255,107,53,0.08); }
+  .card-top.status-preparing { background:rgba(255,179,71,0.08); }
+  .card-top.status-ready { background:rgba(62,207,142,0.08); }
+  .card-top.status-urgent { background:rgba(255,71,87,0.1); }
 
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
+  .table-info {}
+  .table-num { font-size:2rem; font-weight:800; line-height:1; letter-spacing:-1px; }
+  .order-meta { font-size:0.75rem; color:var(--muted); margin-top:3px; }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+  .card-badges { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .badge {
+    font-size:0.68rem; font-weight:700; padding:4px 10px; border-radius:6px;
+    text-transform:uppercase; letter-spacing:0.6px;
+  }
+  .badge-pending { background:rgba(255,107,53,0.2); color:var(--primary); }
+  .badge-preparing { background:rgba(255,179,71,0.2); color:var(--amber); }
+  .badge-ready { background:rgba(62,207,142,0.2); color:var(--green); }
+  .badge-urgent { background:rgba(255,71,87,0.2); color:var(--red); animation:pulseBadge 1.2s infinite; }
+  @keyframes pulseBadge { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
-        .orders-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-        }
+  /* ITEMS */
+  .card-items { padding:14px 20px; }
+  .order-item {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:9px 0; border-bottom:1px solid var(--border);
+  }
+  .order-item:last-child { border:none; }
+  .item-name { font-size:0.95rem; font-weight:500; color:var(--text); }
+  .item-qty {
+    background:var(--surface2); color:var(--text);
+    width:28px; height:28px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.85rem; font-weight:700; flex-shrink:0;
+  }
+  .item-qty.large { background:var(--primary); color:white; }
 
-        .order-card {
-            background: #16213e;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            border-left: 5px solid #667eea;
-            transition: transform 0.3s;
-        }
+  /* CARD FOOTER */
+  .card-footer {
+    padding:14px 20px;
+    border-top:1px solid var(--border);
+    background:rgba(0,0,0,0.15);
+  }
+  .action-btn {
+    width:100%; padding:12px; border:none; border-radius:10px;
+    font-size:0.9rem; font-weight:700; cursor:pointer;
+    font-family:'DM Sans',sans-serif; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .action-btn:hover { filter:brightness(1.1); transform:translateY(-1px); }
+  .action-btn:active { transform:scale(0.97); }
+  .btn-start { background:linear-gradient(135deg,#ff6b35,#ff4500); color:white; }
+  .btn-ready { background:linear-gradient(135deg,#3ecf8e,#29b57d); color:white; }
+  .btn-served { background:var(--surface2); color:var(--muted); }
 
-        .order-card:hover {
-            transform: translateY(-5px);
-        }
+  /* EMPTY */
+  .empty-state {
+    grid-column:1/-1; text-align:center; padding:80px 20px;
+    color:var(--muted);
+  }
+  .empty-state .icon { font-size:5rem; margin-bottom:20px; opacity:0.4; }
+  .empty-state h3 { font-size:1.3rem; font-weight:700; margin-bottom:8px; }
+  .empty-state p { font-size:0.9rem; }
 
-        .order-card.urgent {
-            border-left-color: #f5576c;
-            animation: pulse 2s infinite;
-        }
+  /* NOTIFICATION */
+  .notif {
+    position:fixed; top:76px; right:20px; z-index:999;
+    background:var(--surface); border:1px solid var(--border);
+    padding:14px 20px; border-radius:12px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.4);
+    display:flex; align-items:center; gap:12px;
+    transform:translateX(120%); transition:transform 0.3s;
+    max-width:280px;
+  }
+  .notif.show { transform:translateX(0); }
+  .notif.urgent { border-color:rgba(255,71,87,0.5); background:#1f0d10; }
+  .notif-icon { font-size:1.5rem; }
+  .notif-text { font-size:0.85rem; font-weight:600; }
+  .notif-sub { font-size:0.75rem; color:var(--muted); }
 
-        @keyframes pulse {
-            0%, 100% {
-                box-shadow: 0 5px 15px rgba(245, 87, 108, 0.3);
-            }
-            50% {
-                box-shadow: 0 5px 25px rgba(245, 87, 108, 0.6);
-            }
-        }
-
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(255,255,255,0.1);
-        }
-
-        .table-number {
-            font-size: 1.8em;
-            font-weight: bold;
-        }
-
-        .order-time {
-            font-size: 0.9em;
-            color: #aaa;
-        }
-
-        .urgent-badge {
-            background: #f5576c;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: bold;
-            display: inline-block;
-            margin-left: 10px;
-            animation: blink 1.5s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .order-items {
-            margin: 15px 0;
-        }
-
-        .order-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .item-name {
-            font-size: 1.1em;
-        }
-
-        .item-quantity {
-            background: #667eea;
-            color: white;
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-
-        .order-footer {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px solid rgba(255,255,255,0.1);
-        }
-
-        .order-total {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #43e97b;
-            margin-bottom: 15px;
-        }
-
-        .order-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .action-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
-        }
-
-        .action-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .action-btn:active {
-            transform: scale(0.95);
-        }
-
-        .btn-preparing {
-            background: #ffa726;
-            color: white;
-        }
-
-        .btn-ready {
-            background: #43e97b;
-            color: white;
-        }
-
-        .btn-complete {
-            background: #667eea;
-            color: white;
-        }
-
-        .order-card.preparing {
-            border-left-color: #ffa726;
-        }
-
-        .order-card.ready {
-            border-left-color: #43e97b;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .status-pending {
-            background: #667eea;
-        }
-
-        .status-preparing {
-            background: #ffa726;
-        }
-
-        .status-ready {
-            background: #43e97b;
-        }
-
-        .no-orders {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .no-orders-icon {
-            font-size: 5em;
-            margin-bottom: 20px;
-        }
-
-        .notification-sound {
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .orders-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-    </style>
+  @media(max-width:768px) {
+    .orders-grid { grid-template-columns:1fr; }
+    .stats-bar { flex-wrap:wrap; }
+    .stat { min-width:50%; }
+  }
+</style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div>
-                <h1>👨‍🍳 Kitchen Display</h1>
-                <div class="order-time" id="currentTime"></div>
-            </div>
-            <div class="stats">
-                <div class="stat-box">
-                    <div class="stat-number" id="totalOrders">0</div>
-                    <div class="stat-label">Active Orders</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-number" id="urgentOrders">0</div>
-                    <div class="stat-label">Urgent</div>
-                </div>
-            </div>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>👨‍🍳 Kitchen Display</h1>
+    <div class="live-pill"><div class="live-dot"></div> LIVE</div>
+  </div>
+  <div class="clock" id="clock"></div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-num orange" id="statTotal">0</div><div class="stat-label">Active Orders</div></div>
+  <div class="stat"><div class="stat-num amber" id="statPending">0</div><div class="stat-label">Pending</div></div>
+  <div class="stat"><div class="stat-num amber" id="statPreparing">0</div><div class="stat-label">Preparing</div></div>
+  <div class="stat"><div class="stat-num green" id="statReady">0</div><div class="stat-label">Ready</div></div>
+  <div class="stat"><div class="stat-num red" id="statUrgent">0</div><div class="stat-label">Urgent</div></div>
+</div>
+
+<div class="orders-wrap">
+  <div class="orders-grid" id="ordersGrid"></div>
+</div>
+
+<div class="notif" id="notif">
+  <div class="notif-icon" id="notifIcon">🔔</div>
+  <div><div class="notif-text" id="notifText">New Order</div><div class="notif-sub" id="notifSub"></div></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  let orders = [];
+
+  socket.emit('join-kitchen');
+
+  // Clock
+  function updateClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  async function fetchOrders() {
+    const res = await fetch('/api/orders');
+    orders = await res.json();
+    renderOrders();
+    updateStats();
+  }
+
+  function renderOrders() {
+    const grid = document.getElementById('ordersGrid');
+    if (!orders.length) {
+      grid.innerHTML = `<div class="empty-state"><div class="icon">😴</div><h3>All Caught Up!</h3><p>No active orders right now</p></div>`;
+      return;
+    }
+    const sorted = [...orders].sort((a,b) => {
+      if (a.isUrgent && !b.isUrgent) return -1;
+      if (!a.isUrgent && b.isUrgent) return 1;
+      return new Date(a.timestamp) - new Date(b.timestamp);
+    });
+    grid.innerHTML = sorted.map(order => `
+      <div class="order-card ${order.isUrgent ? 'urgent' : ''}" id="card-${order.id}">
+        <div class="card-top status-${order.isUrgent ? 'urgent' : order.status}">
+          <div class="table-info">
+            <div class="table-num">Table ${order.tableNumber}</div>
+            <div class="order-meta">Order #${order.orderNumber} &middot; ${order.createdAt}</div>
+          </div>
+          <div class="card-badges">
+            ${order.isUrgent ? '<span class="badge badge-urgent">🔴 Urgent</span>' : ''}
+            <span class="badge badge-${order.status}" id="badge-${order.id}">${order.status}</span>
+          </div>
         </div>
-    </div>
+        <div class="card-items">
+          ${order.items.map(item => `
+            <div class="order-item">
+              <span class="item-name">${item.name}</span>
+              <span class="item-qty ${item.quantity > 2 ? 'large' : ''}">${item.quantity}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="card-footer">
+          ${order.status === 'pending' ? `
+            <button class="action-btn btn-start" onclick="updateStatus('${order.id}','preparing')">
+              🔥 Start Preparing
+            </button>
+          ` : order.status === 'preparing' ? `
+            <button class="action-btn btn-ready" onclick="updateStatus('${order.id}','ready')">
+              ✅ Mark as Ready
+            </button>
+          ` : order.status === 'ready' ? `
+            <button class="action-btn btn-served" onclick="updateStatus('${order.id}','completed')">
+              ✓ Mark Served
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
 
-    <div class="container">
-        <div class="orders-grid" id="ordersGrid"></div>
-    </div>
+  function updateStats() {
+    document.getElementById('statTotal').textContent = orders.length;
+    document.getElementById('statPending').textContent = orders.filter(o => o.status==='pending').length;
+    document.getElementById('statPreparing').textContent = orders.filter(o => o.status==='preparing').length;
+    document.getElementById('statReady').textContent = orders.filter(o => o.status==='ready').length;
+    document.getElementById('statUrgent').textContent = orders.filter(o => o.isUrgent).length;
+  }
 
-    <audio id="notificationSound" class="notification-sound">
-        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIHWm98OGeQwsNVqzn77BdGAg+ltry0H0hBCtz0fPTgjMGGGS57OmoTAsLUKXh8Lx2IgU1h9rx1n8cBSN00fPPhTUHFluz6uesTwoKTqDf87hiGwU0htry04EgBShy0PTPh..." type="audio/wav">
-    </audio>
+  async function updateStatus(orderId, status) {
+    await fetch(`/api/order/${orderId}/status`, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ status })
+    });
+    fetchOrders();
+  }
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let orders = [];
+  function showNotif(text, sub, isUrgent) {
+    const el = document.getElementById('notif');
+    document.getElementById('notifIcon').textContent = isUrgent ? '🔴' : '🔔';
+    document.getElementById('notifText').textContent = text;
+    document.getElementById('notifSub').textContent = sub;
+    el.className = `notif ${isUrgent ? 'urgent' : ''} show`;
+    setTimeout(() => { el.className = `notif ${isUrgent ? 'urgent' : ''}`; }, 4000);
+  }
 
-        // Join kitchen room
-        socket.emit('join-kitchen');
+  socket.on('new-order', (order) => {
+    showNotif(
+      `New Order — Table ${order.tableNumber}`,
+      order.isUrgent ? '⚡ URGENT! Already eating' : `${order.items?.length || 0} items`,
+      order.isUrgent
+    );
+    fetchOrders();
+  });
 
-        // Update current time
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = now.toLocaleString('en-IN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-        }
-        setInterval(updateTime, 1000);
-        updateTime();
+  socket.on('orders-update', (updatedOrders) => {
+    orders = updatedOrders;
+    renderOrders();
+    updateStats();
+  });
 
-        // Fetch orders
-        async function fetchOrders() {
-            try {
-                const response = await fetch('/api/orders');
-                orders = await response.json();
-                displayOrders();
-                updateStats();
-            } catch (error) {
-                console.error('Error fetching orders:', error);
-            }
-        }
+  socket.on('order-status-update', () => fetchOrders());
 
-        // Display orders
-        function displayOrders() {
-            const ordersGrid = document.getElementById('ordersGrid');
+  if (Notification.permission === 'default') Notification.requestPermission();
 
-            if (orders.length === 0) {
-                ordersGrid.innerHTML = `
-                    <div class="no-orders">
-                        <div class="no-orders-icon">😴</div>
-                        <h2>No Active Orders</h2>
-                        <p>Waiting for new orders...</p>
-                    </div>
-                `;
-                return;
-            }
-
-            // Sort: urgent first, then by time
-            const sortedOrders = [...orders].sort((a, b) => {
-                if (a.isUrgent && !b.isUrgent) return -1;
-                if (!a.isUrgent && b.isUrgent) return 1;
-                return new Date(b.timestamp) - new Date(a.timestamp);
-            });
-
-            ordersGrid.innerHTML = sortedOrders.map(order => `
-                <div class="order-card ${order.status} ${order.isUrgent ? 'urgent' : ''}">
-                    <div class="order-header">
-                        <div>
-                            <span class="table-number">Table ${order.tableNumber}</span>
-                            ${order.isUrgent ? '<span class="urgent-badge">🔥 URGENT</span>' : ''}
-                        </div>
-                        <div>
-                            <span class="status-badge status-${order.status}">${order.status}</span>
-                        </div>
-                    </div>
-
-                    <div class="order-time">Order #${order.orderNumber} • ${order.createdAt}</div>
-
-                    <div class="order-items">
-                        ${order.items.map(item => `
-                            <div class="order-item">
-                                <span class="item-name">
-                                    ${item.name}
-                                    <span class="item-quantity">×${item.quantity}</span>
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
-
-                    <div class="order-footer">
-                        <div class="order-total">Total: ₹${order.total}</div>
-                        <div class="order-actions">
-                            ${order.status === 'pending' ? `
-                                <button class="action-btn btn-preparing" onclick="updateStatus('${order.id}', 'preparing')">
-                                    Start Preparing
-                                </button>
-                            ` : ''}
-                            ${order.status === 'preparing' ? `
-                                <button class="action-btn btn-ready" onclick="updateStatus('${order.id}', 'ready')">
-                                    Mark as Ready
-                                </button>
-                            ` : ''}
-                            ${order.status === 'ready' ? `
-                                <button class="action-btn btn-complete" onclick="updateStatus('${order.id}', 'completed')">
-                                    Complete Order
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Update statistics
-        function updateStats() {
-            document.getElementById('totalOrders').textContent = orders.length;
-            document.getElementById('urgentOrders').textContent = orders.filter(o => o.isUrgent).length;
-        }
-
-        // Update order status
-        async function updateStatus(orderId, newStatus) {
-            try {
-                const response = await fetch(`/api/order/${orderId}/status`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ status: newStatus })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    fetchOrders();
-                }
-            } catch (error) {
-                console.error('Error updating status:', error);
-            }
-        }
-
-        // Play notification sound
-        function playNotification() {
-            const audio = document.getElementById('notificationSound');
-            audio.play().catch(e => console.log('Audio play failed:', e));
-        }
-
-        // Socket.IO listeners
-        socket.on('new-order', (order) => {
-            console.log('New order received:', order);
-            playNotification();
-            fetchOrders();
-            
-            // Show browser notification if permitted
-            if (Notification.permission === 'granted') {
-                new Notification('New Order!', {
-                    body: `Table ${order.tableNumber} - ${order.isUrgent ? 'URGENT!' : 'New order'}`,
-                    icon: '🍽️'
-                });
-            }
-        });
-
-        socket.on('orders-update', (updatedOrders) => {
-            orders = updatedOrders;
-            displayOrders();
-            updateStats();
-        });
-
-        socket.on('order-status-update', () => {
-            fetchOrders();
-        });
-
-        // Request notification permission
-        if (Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
-
-        // Initialize
-        fetchOrders();
-    </script>
+  fetchOrders();
+</script>
 </body>
 </html>
