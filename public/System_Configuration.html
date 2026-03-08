@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Configuration</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f3f4f6; --white:#fff; --border:#e5e7eb;
+  --text:#111827; --muted:#6b7280;
+  --orange:#f97316; --orange-l:rgba(249,115,22,0.12);
+  --green:#10b981; --red:#ef4444;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 6px 20px rgba(0,0,0,0.05);
+  --r:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* PAGE */
+.page-header{background:var(--text);color:white;padding:22px 36px;display:flex;align-items:center;justify-content:space-between;}
+.page-header h1{font-size:1.15rem;font-weight:800;}
+.page-header p{font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:2px;}
+.header-links{display:flex;gap:10px;}
+.hlink{color:rgba(255,255,255,0.6);font-size:0.8rem;font-weight:600;text-decoration:none;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.08);}
+.hlink:hover{background:rgba(255,255,255,0.15);}
+
+.main{max-width:960px;margin:28px auto;padding:0 20px;}
+
+/* CARDS */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:700px){.config-grid{grid-template-columns:1fr;}}
+
+.card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:20px;}
+.card-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.card-icon{width:40px;height:40px;border-radius:10px;background:var(--orange-l);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.card-head h2{font-size:0.95rem;font-weight:800;}
+.card-head p{font-size:0.77rem;color:var(--muted);}
+.card-body{padding:22px;}
+
+/* FORM ELEMENTS */
+.fg{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+.fg:last-child{margin-bottom:0;}
+label{font-size:0.73rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+input,select{padding:11px 14px;border:2px solid var(--border);border-radius:9px;font-size:0.9rem;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color 0.2s;width:100%;}
+input:focus,select:focus{border-color:var(--orange);}
+.hint{font-size:0.76rem;color:var(--muted);margin-top:3px;}
+
+/* UPLOAD AREA */
+.upload-area{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;}
+.upload-area:hover{border-color:var(--orange);background:var(--orange-l);}
+.upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-icon{font-size:2rem;margin-bottom:8px;}
+.upload-label{font-size:0.88rem;font-weight:600;color:var(--text);}
+.upload-hint{font-size:0.75rem;color:var(--muted);margin-top:4px;}
+.preview-img{max-width:100%;max-height:120px;border-radius:8px;margin-top:12px;display:none;object-fit:cover;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 22px;border-radius:10px;font-size:0.88rem;font-weight:700;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.btn:hover{filter:brightness(0.92);transform:translateY(-1px);}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--orange);color:white;}
+.btn-full{width:100%;justify-content:center;}
+
+/* SAVE BAR */
+.save-bar{position:sticky;bottom:0;background:var(--white);border-top:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,0.08);}
+.save-status{font-size:0.85rem;color:var(--muted);}
+.save-status.saved{color:var(--green);}
+.save-status.error{color:var(--red);}
+
+/* PREVIEW SECTION */
+.preview-section{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:20px;}
+.preview-section .p-head{padding:16px 22px;border-bottom:1px solid var(--border);font-size:0.92rem;font-weight:800;}
+.preview-area{padding:20px;}
+.mock-header{background:linear-gradient(135deg,#fc8019,#e23744);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;color:white;}
+.mock-logo{width:36px;height:36px;border-radius:7px;object-fit:cover;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;overflow:hidden;}
+.mock-logo img{width:100%;height:100%;object-fit:cover;display:none;}
+.mock-name{font-size:1rem;font-weight:800;}
+.mock-table{font-size:0.8rem;opacity:0.8;}
+.mock-banner{width:100%;height:80px;border-radius:8px;object-fit:cover;margin-top:12px;display:none;background:#f0f0f0;}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;right:22px;background:var(--text);color:white;padding:12px 18px;border-radius:12px;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,0.2);transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.ok{border-left:4px solid var(--green);}
+.toast.err{border-left:4px solid var(--red);}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <h1>⚙️ System Configuration</h1>
+    <p>Owner-only setup panel — configure restaurant identity, network, and branding</p>
+  </div>
+  <div class="header-links">
+    <a href="/admin" class="hlink">Admin Panel</a>
+    <a href="/kitchen" class="hlink">Kitchen</a>
+    <a href="/" class="hlink">Home</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- PREVIEW -->
+  <div class="preview-section">
+    <div class="p-head">Live Preview — Customer App Header</div>
+    <div class="preview-area">
+      <div class="mock-header">
+        <div class="mock-logo" id="mockLogo">
+          🍽️<img id="mockLogoImg" src="" alt="">
+        </div>
+        <div>
+          <div class="mock-name" id="mockName">My Restaurant</div>
+          <div class="mock-table">Table 1</div>
+        </div>
+      </div>
+      <img id="mockBanner" class="mock-banner" src="" alt="">
+    </div>
+  </div>
+
+  <div class="config-grid">
+
+    <!-- RESTAURANT INFO -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon">🏪</div>
+        <div><h2>Restaurant Info</h2><p>Name and currency</p></div>
+      </div>
+      <div class="card-body">
+        <div class="fg">
+          <label>Restaurant Name *</label>
+          <input type="text" id="cfgName" placeholder="e.g. Spice Garden" oninput="updatePreview()">
+        </div>
+        <div class="fg">
+          <label>Currency Symbol</label>
+          <input type="text" id="cfgCurrency" placeholder="₹" style="max-width:80px">
+        </div>
+      </div>
+    </div>
+
+    <!-- WIFI CONFIG -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon">📶</div>
+        <div><h2>WiFi Restriction</h2><p>Block ordering outside restaurant</p></div>
+      </div>
+      <div class="card-body">
+        <div class="fg">
+          <label>WiFi Network Name (SSID)</label>
+          <input type="text" id="cfgWifiName" placeholder="e.g. RestaurantGuest">
+          <span class="hint">Shown to customers on the block screen</span>
+        </div>
+        <div class="fg">
+          <label>WiFi IP Prefix (for validation)</label>
+          <input type="text" id="cfgWifiIp" placeholder="e.g. 192.168.1">
+          <span class="hint">Customers outside this IP range will be blocked. Leave blank to disable.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LOGO UPLOAD -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">🖼️</div>
+      <div><h2>Restaurant Logo</h2><p>Appears in app header and bills</p></div>
+    </div>
+    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div class="fg"><label>Upload Logo Image</label></div>
+        <div class="upload-area" onclick="document.getElementById('logoFile').click()">
+          <input type="file" id="logoFile" accept="image/*" onchange="previewLogo(this)">
+          <div class="upload-icon">📷</div>
+          <div class="upload-label">Click to upload logo</div>
+          <div class="upload-hint">PNG, JPG — max 2MB</div>
+        </div>
+        <img id="logoPreview" class="preview-img" src="" alt="">
+      </div>
+      <div>
+        <div class="fg">
+          <label>Or paste image URL</label>
+          <input type="text" id="cfgLogoUrl" placeholder="https://..." oninput="previewLogoUrl()">
+        </div>
+        <div class="hint" style="margin-top:8px">Upload OR URL — upload takes priority</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BANNER UPLOAD -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-icon">🖼️</div>
+      <div><h2>Restaurant Banner</h2><p>Wide banner shown at top of customer ordering page</p></div>
+    </div>
+    <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div class="fg"><label>Upload Banner Image</label></div>
+        <div class="upload-area" onclick="document.getElementById('bannerFile').click()">
+          <input type="file" id="bannerFile" accept="image/*" onchange="previewBanner(this)">
+          <div class="upload-icon">🏞️</div>
+          <div class="upload-label">Click to upload banner</div>
+          <div class="upload-hint">PNG, JPG — recommended 1200×300</div>
+        </div>
+        <img id="bannerPreview" class="preview-img" src="" alt="">
+      </div>
+      <div>
+        <div class="fg">
+          <label>Or paste banner URL</label>
+          <input type="text" id="cfgBannerUrl" placeholder="https://..." oninput="previewBannerUrl()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="save-bar">
+  <div class="save-status" id="saveStatus">Changes not saved yet</div>
+  <button class="btn btn-primary" onclick="saveConfig()">💾 Save All Settings</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentCfg = {};
+
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = (type==='ok'?'✓ ':'✕ ') + msg;
+  t.className = `toast ${type} show`;
+  setTimeout(()=>{t.className='toast';}, 3000);
+}
+
+async function loadConfig() {
+  const res = await fetch('/api/config');
+  currentCfg = await res.json();
+  document.getElementById('cfgName').value = currentCfg.restaurantName || '';
+  document.getElementById('cfgCurrency').value = currentCfg.currency || '₹';
+  document.getElementById('cfgWifiName').value = currentCfg.wifiName || '';
+  document.getElementById('cfgWifiIp').value = currentCfg.wifiIp || '';
+  document.getElementById('cfgLogoUrl').value = (!currentCfg.logo || currentCfg.logo.startsWith('data:')) ? '' : currentCfg.logo;
+  document.getElementById('cfgBannerUrl').value = (!currentCfg.banner || currentCfg.banner.startsWith('data:')) ? '' : currentCfg.banner;
+
+  if (currentCfg.logo) {
+    const lp = document.getElementById('logoPreview');
+    lp.src = currentCfg.logo; lp.style.display = 'block';
+  }
+  if (currentCfg.banner) {
+    const bp = document.getElementById('bannerPreview');
+    bp.src = currentCfg.banner; bp.style.display = 'block';
+  }
+  updatePreview();
+}
+
+function updatePreview() {
+  const name = document.getElementById('cfgName').value || 'My Restaurant';
+  document.getElementById('mockName').textContent = name;
+  document.title = name + ' — System Config';
+}
+
+function previewLogo(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lp = document.getElementById('logoPreview');
+    lp.src = e.target.result; lp.style.display = 'block';
+    const mi = document.getElementById('mockLogoImg');
+    mi.src = e.target.result; mi.style.display = 'block';
+    document.getElementById('cfgLogoUrl').value = '';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function previewLogoUrl() {
+  const url = document.getElementById('cfgLogoUrl').value;
+  if (!url) return;
+  const lp = document.getElementById('logoPreview');
+  lp.src = url; lp.style.display = 'block';
+  const mi = document.getElementById('mockLogoImg');
+  mi.src = url; mi.style.display = 'block';
+  document.getElementById('logoFile').value = '';
+}
+
+function previewBanner(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const bp = document.getElementById('bannerPreview');
+    bp.src = e.target.result; bp.style.display = 'block';
+    const mb = document.getElementById('mockBanner');
+    mb.src = e.target.result; mb.style.display = 'block';
+    document.getElementById('cfgBannerUrl').value = '';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function previewBannerUrl() {
+  const url = document.getElementById('cfgBannerUrl').value;
+  if (!url) return;
+  const bp = document.getElementById('bannerPreview');
+  bp.src = url; bp.style.display = 'block';
+  const mb = document.getElementById('mockBanner');
+  mb.src = url; mb.style.display = 'block';
+  document.getElementById('bannerFile').value = '';
+}
+
+async function saveConfig() {
+  const status = document.getElementById('saveStatus');
+  status.textContent = 'Saving...';
+  status.className = 'save-status';
+
+  const logoFile = document.getElementById('logoFile').files[0];
+  const bannerFile = document.getElementById('bannerFile').files[0];
+
+  const formData = new FormData();
+  formData.append('restaurantName', document.getElementById('cfgName').value || 'My Restaurant');
+  formData.append('currency', document.getElementById('cfgCurrency').value || '₹');
+  formData.append('wifiName', document.getElementById('cfgWifiName').value);
+  formData.append('wifiIp', document.getElementById('cfgWifiIp').value);
+
+  if (logoFile) formData.append('logo', logoFile);
+  else formData.append('logoUrl', document.getElementById('cfgLogoUrl').value || currentCfg.logo || '');
+
+  if (bannerFile) formData.append('banner', bannerFile);
+  else formData.append('bannerUrl', document.getElementById('cfgBannerUrl').value || currentCfg.banner || '');
+
+  try {
+    const res = await fetch('/api/config', { method:'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+      currentCfg = data.config;
+      status.textContent = '✓ Saved successfully!';
+      status.className = 'save-status saved';
+      toast('Settings saved! All pages updated.');
+      setTimeout(()=>{ status.textContent = 'All changes saved'; }, 3000);
+    } else {
+      status.textContent = '✕ Save failed';
+      status.className = 'save-status error';
+      toast('Save failed: ' + (data.error||'Unknown error'), 'err');
+    }
+  } catch(e) {
+    status.textContent = '✕ Network error';
+    status.className = 'save-status error';
+    toast('Network error', 'err');
+  }
+}
+
+loadConfig();
+</script>
+</body>
+</html>
