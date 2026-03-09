@@ -414,6 +414,17 @@ app.get('/system-config', requireAdmin, (req,res) => res.sendFile(path.join(__di
 app.get('/order', (req,res) => res.sendFile(path.join(__dirname,'public','customer.html')));
 app.get('/', (req,res) => res.sendFile(path.join(__dirname,'public','index.html')));
 
+// ─── KEEP ALIVE (prevents Render free tier sleep) ────────────────────────────
+if (process.env.RENDER_EXTERNAL_URL) {
+  const keepAliveUrl = process.env.RENDER_EXTERNAL_URL + '/api/config';
+  setInterval(() => {
+    fetch(keepAliveUrl)
+      .then(() => console.log('✅ Keep-alive ping sent'))
+      .catch(() => console.log('⚠️  Keep-alive ping failed (will retry)'));
+  }, 10 * 60 * 1000); // every 10 minutes
+  console.log('🔄 Keep-alive enabled for Render:', keepAliveUrl);
+}
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🍽️  Running on http://localhost:${PORT} | DB: ${DB_PATH}`));
 module.exports = { app, server };
